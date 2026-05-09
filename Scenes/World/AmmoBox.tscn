@@ -1,0 +1,46 @@
+[gd_scene load_steps=5 format=3 uid="uid://bujmbsjv4nndu"]
+
+[sub_resource type="GDScript" id="GDScript_2na1l"]
+script/source = "extends StaticBody3D
+
+@export_enum(\"medkit\",\"ammo\") var item_type:String =\"medkit\"
+@export var amount: int = 1
+@export var item_name : String = \"Medkit\"
+
+func interact(player_node):
+	player_node.pickup_item.rpc(item_type,amount)
+	
+	queue_free_network.rpc()
+
+@rpc(\"call_local\")
+func queue_free_network():
+	queue_free()
+	
+var current_weapon_name: String:
+	get:
+		return item_name
+"
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_2na1l"]
+radius = 1.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o37ff"]
+albedo_color = Color(0.150148, 0.21101, 2.40654e-08, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_jxvec"]
+material = SubResource("StandardMaterial3D_o37ff")
+
+[node name="AmmoBox" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 0
+script = SubResource("GDScript_2na1l")
+item_type = "ammo"
+amount = 30
+item_name = "Ammo Box"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0510525, 0, 0.253479)
+shape = SubResource("SphereShape3D_2na1l")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_jxvec")

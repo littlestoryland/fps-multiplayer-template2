@@ -1,0 +1,7 @@
+[gd_resource type="Environment" format=3 uid="uid://chjdro5itu2re"]
+
+[resource]
+tonemap_white = 6.0
+glow_blend_mode = 4
+fog_sun_scatter = 0.17
+fog_density = 0.0099

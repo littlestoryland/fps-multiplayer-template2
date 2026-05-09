@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=4 format=3 uid="uid://bt4b01thjpulc"]
+
+[ext_resource type="PackedScene" uid="uid://3vxxrrbtc2vp" path="res://Scenes/Weapons/Rifle.tscn" id="1_1wh4k"]
+[ext_resource type="Script" uid="uid://d2i5ir1btagmo" path="res://Scripts/Weapons/Weapon_data.gd" id="2_1wh4k"]
+[ext_resource type="AudioStream" uid="uid://bevvvtb8n4qfc" path="res://Assets/Audio/645317__darkshroom__m9_noisegate-1780.ogg" id="3_1wh4k"]
+
+[resource]
+script = ExtResource("2_1wh4k")
+name = "AK 47"
+damage = 55
+fire_rate = 0.18
+is_automatic = true
+clip_size = 30
+reload_time = 2.0
+Weapon_Scene = ExtResource("1_1wh4k")
+shoot_sound = ExtResource("3_1wh4k")
+aim_position = Vector3(-0.5, 0.12, 0)
+aim_fov = 50.0
+metadata/_custom_type_script = "uid://d2i5ir1btagmo"

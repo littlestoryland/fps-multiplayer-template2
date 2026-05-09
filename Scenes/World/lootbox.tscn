@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://debwdhbwx3jc3"]
+
+[ext_resource type="Script" uid="uid://cp16cnjlnoq1h" path="res://Scripts/World/lootbox.gd" id="1_6sh62"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_m3jy0"]
+radius = 1.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_aj5sq"]
+
+[node name="Lootbox" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("1_6sh62")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_m3jy0")
+
+[node name="Pivot" type="Node3D" parent="."]
+
+[node name="LootBoxMesh" type="MeshInstance3D" parent="Pivot"]
+mesh = SubResource("BoxMesh_aj5sq")
+skeleton = NodePath("../..")
+
+[node name="WeaponHolder" type="Node3D" parent="Pivot"]
+
+[node name="Label3D" type="Label3D" parent="."]
+billboard = 1

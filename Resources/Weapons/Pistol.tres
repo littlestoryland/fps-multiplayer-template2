@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=4 format=3 uid="uid://drpxlk2uqfid6"]
+
+[ext_resource type="Script" uid="uid://d2i5ir1btagmo" path="res://Scripts/Weapons/Weapon_data.gd" id="1_2uslf"]
+[ext_resource type="PackedScene" uid="uid://c5c1lnw5ajt3c" path="res://Scenes/Weapons/pistol.tscn" id="1_uuj3x"]
+[ext_resource type="AudioStream" uid="uid://bevvvtb8n4qfc" path="res://Assets/Audio/645317__darkshroom__m9_noisegate-1780.ogg" id="3_8uc0g"]
+
+[resource]
+script = ExtResource("1_2uslf")
+name = "Pistol"
+damage = 42
+fire_rate = 0.5
+is_automatic = false
+clip_size = 12
+reload_time = 1.0
+Weapon_Scene = ExtResource("1_uuj3x")
+shoot_sound = ExtResource("3_8uc0g")
+aim_position = Vector3(-0.5, 0.12, 0)
+aim_fov = 50.0
+metadata/_custom_type_script = "uid://d2i5ir1btagmo"

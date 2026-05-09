@@ -1,0 +1,509 @@
+[gd_scene load_steps=30 format=3 uid="uid://b2qhxdrnviyqf"]
+
+[ext_resource type="Script" uid="uid://dmrnfip7yx6cm" path="res://Scripts/Player/player.gd" id="1_oikmp"]
+[ext_resource type="Texture2D" uid="uid://duu4nryr7idps" path="res://Assets/Textures/circle_05.png" id="5_r5xpd"]
+[ext_resource type="Script" uid="uid://bi0bs0tibuacc" path="res://Scripts/UI/crosshair.gd" id="6_ks1b7"]
+[ext_resource type="PackedScene" uid="uid://dmr0fcamx7t56" path="res://addons/virtual_joystick/virtual_joystick_scene.tscn" id="7_hnuln"]
+[ext_resource type="Texture2D" uid="uid://dp26q4w5ircr0" path="res://Assets/Textures/1763136852976-removebg-preview.png" id="8_aqm4k"]
+[ext_resource type="Texture2D" uid="uid://rab6vho1umjn" path="res://Assets/Textures/flash_icon.png" id="9_rcvs5"]
+[ext_resource type="Texture2D" uid="uid://b3ohgushsl75e" path="res://Assets/Textures/flatDark32.png" id="10_h8ma5"]
+[ext_resource type="FontFile" uid="uid://dg4tj7vl52kfj" path="res://Assets/Font/Caprasimo-Regular.ttf" id="10_jhyir"]
+[ext_resource type="Script" uid="uid://dchbk2bklh7cq" path="res://Scripts/UI/menu/pause/resume.gd" id="11_eksi1"]
+[ext_resource type="Script" uid="uid://doqs8aspeunw" path="res://Scripts/UI/menu/pause/quit.gd" id="12_jincj"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ivps1"]
+vertex_color_use_as_albedo = true
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_7800j"]
+material = SubResource("StandardMaterial3D_ivps1")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kk8xf"]
+
+[sub_resource type="Animation" id="Animation_5woug"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D/Gun:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.5, -0.25, -0.5)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D/Gun:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_hwk86"]
+resource_name = "idle"
+length = 3.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D/Gun:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1.5),
+"transitions": PackedFloat32Array(-2, -2),
+"update": 0,
+"values": [Vector3(0.5, -0.25, -0.5), Vector3(0.5, -0.3, -0.5)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D/Gun:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1.5),
+"transitions": PackedFloat32Array(-2, -2),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(-0.122173, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_yvvk7"]
+resource_name = "move"
+loop_mode = 1
+step = 0.25
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D/Gun:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.5, 0.75),
+"transitions": PackedFloat32Array(0.5, 2, 0.5, 2),
+"update": 0,
+"values": [Vector3(0.5, -0.25, -0.5), Vector3(0.467158, -0.179294, -0.5), Vector3(0.5, -0.25, -0.5), Vector3(0.522576, -0.202587, -0.5)]
+}
+
+[sub_resource type="Animation" id="Animation_d7qmc"]
+resource_name = "shoot"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D/Gun:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(0.5, 1),
+"update": 0,
+"values": [Vector3(0.5, -0.178057, -0.5), Vector3(0.5, -0.25, -0.5)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D/Gun:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(0.5, 1),
+"update": 0,
+"values": [Vector3(0.408843, 0, 0), Vector3(0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_m8nyu"]
+_data = {
+&"RESET": SubResource("Animation_5woug"),
+&"idle": SubResource("Animation_hwk86"),
+&"move": SubResource("Animation_yvvk7"),
+&"shoot": SubResource("Animation_d7qmc")
+}
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_m36li"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("Camera3D:rotation")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:health")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath(".:player_color")
+properties/4/spawn = true
+properties/4/replication_mode = 1
+properties/5/path = NodePath(".:playername")
+properties/5/spawn = true
+properties/5/replication_mode = 1
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nvl01"]
+atlas = ExtResource("8_aqm4k")
+region = Rect2(336, 166, 139, 141)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jhyir"]
+atlas = ExtResource("8_aqm4k")
+region = Rect2(181, 166, 142, 142)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_74mp2"]
+atlas = ExtResource("8_aqm4k")
+region = Rect2(22, 166, 144, 142)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oikmp"]
+atlas = ExtResource("8_aqm4k")
+region = Rect2(181, 166, 142, 142)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_06tpx"]
+atlas = ExtResource("5_r5xpd")
+region = Rect2(181, 166, 142, 142)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7g0yx"]
+atlas = ExtResource("9_rcvs5")
+region = Rect2(3, 16, 58, 32)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jhyir"]
+bg_color = Color(0.238744, 0.238744, 0.238744, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_74mp2"]
+bg_color = Color(1, 0, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_74mp2"]
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(1, 0.504962, 0.438302, 1)
+
+[sub_resource type="ImmediateMesh" id="ImmediateMesh_oikmp"]
+
+[node name="player" type="CharacterBody3D" groups=["Player"]]
+collision_layer = 2
+script = ExtResource("1_oikmp")
+infinite_reserves = true
+recoil_kick = 0.2
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_7800j")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_kk8xf")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+cull_mask = 1048567
+
+[node name="RayCast3D" type="RayCast3D" parent="Camera3D"]
+target_position = Vector3(0, 0, -50)
+collision_mask = 3
+
+[node name="InteractRay" type="RayCast3D" parent="Camera3D"]
+target_position = Vector3(0, 0, -3)
+collision_mask = 5
+collide_with_areas = true
+
+[node name="SubViewport" type="SubViewportContainer" parent="Camera3D"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+metadata/_edit_use_anchors_ = true
+
+[node name="SubViewport" type="SubViewport" parent="Camera3D/SubViewport"]
+transparent_bg = true
+handle_input_locally = false
+canvas_cull_mask = 4294967287
+size = Vector2i(1152, 648)
+render_target_update_mode = 4
+
+[node name="WeaponCamera" type="Camera3D" parent="Camera3D/SubViewport/SubViewport"]
+cull_mask = 1047560
+
+[node name="Node3D" type="Node3D" parent="Camera3D/SubViewport/SubViewport/WeaponCamera"]
+
+[node name="Gun" type="Node3D" parent="Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, -0.25, -0.5)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_m8nyu")
+}
+autoplay = "idle"
+playback_default_blend_time = 0.05
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_m36li")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.20673, 0)
+billboard = 1
+text = "Player"
+uppercase = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="TouchScreenButton" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(1012, 268.403)
+scale = Vector2(0.798561, 0.798561)
+texture_normal = SubResource("AtlasTexture_nvl01")
+action = "jump"
+visibility_mode = 1
+
+[node name="TouchScreenButton3" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(1040, 400)
+rotation = 1.5708
+scale = Vector2(3.67187, 3.53676)
+texture_normal = ExtResource("9_rcvs5")
+action = "shoot"
+visibility_mode = 1
+
+[node name="TouchScreenButton2" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(1079, 4.40289)
+scale = Vector2(1.45833, 1.44994)
+texture_normal = ExtResource("10_h8ma5")
+action = "pause"
+visibility_mode = 1
+
+[node name="TouchScreenButton4" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(882, 115)
+scale = Vector2(1.45833, 1.44994)
+texture_normal = ExtResource("10_h8ma5")
+action = "w1"
+visibility_mode = 1
+
+[node name="TouchScreenButton5" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(963, 115)
+scale = Vector2(1.45833, 1.44994)
+texture_normal = ExtResource("10_h8ma5")
+action = "w2"
+visibility_mode = 1
+
+[node name="TouchScreenButton6" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(1046, 113)
+scale = Vector2(1.45833, 1.44994)
+texture_normal = ExtResource("10_h8ma5")
+action = "w3"
+visibility_mode = 1
+
+[node name="TouchScreenButton7" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(43, 260)
+scale = Vector2(0.65493, 0.640845)
+texture_normal = SubResource("AtlasTexture_jhyir")
+passby_press = true
+action = "sprint"
+visibility_mode = 1
+
+[node name="TouchScreenButton13" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(273, 453)
+scale = Vector2(0.65493, 0.640845)
+texture_normal = SubResource("AtlasTexture_74mp2")
+passby_press = true
+action = "crouch"
+visibility_mode = 1
+
+[node name="TouchScreenButton8" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(932, 257)
+rotation = 0.833957
+scale = Vector2(0.65493, 0.640845)
+texture_normal = SubResource("AtlasTexture_jhyir")
+action = "slide"
+visibility_mode = 1
+
+[node name="TouchScreenButton10" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(1104, 426)
+rotation = 0.833957
+scale = Vector2(0.313067, 0.33067)
+texture_normal = SubResource("AtlasTexture_oikmp")
+action = "med"
+visibility_mode = 1
+
+[node name="TouchScreenButton14" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(583, 460)
+rotation = 0.833957
+scale = Vector2(0.313067, 0.33067)
+texture_normal = SubResource("AtlasTexture_oikmp")
+action = "interact"
+visibility_mode = 1
+
+[node name="TouchScreenButton11" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(316, 560)
+rotation = 0.833957
+scale = Vector2(0.313067, 0.33067)
+texture_normal = SubResource("AtlasTexture_oikmp")
+action = "rol"
+visibility_mode = 1
+
+[node name="TouchScreenButton12" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(819, 399)
+rotation = 0.833957
+scale = Vector2(0.313067, 0.33067)
+texture_normal = SubResource("AtlasTexture_06tpx")
+action = "aim"
+visibility_mode = 1
+
+[node name="TouchScreenButton9" type="TouchScreenButton" parent="CanvasLayer"]
+position = Vector2(808, 562)
+rotation = 1.66934
+scale = Vector2(1.18213, 1.67599)
+texture_normal = SubResource("AtlasTexture_7g0yx")
+action = "throw grenade"
+visibility_mode = 1
+
+[node name="TextureRect" type="TextureRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.03, 0.03)
+texture = ExtResource("5_r5xpd")
+stretch_mode = 5
+script = ExtResource("6_ks1b7")
+
+[node name="Virtual Joystick" parent="CanvasLayer" instance=ExtResource("7_hnuln")]
+offset_left = 8.0
+offset_top = -267.0
+offset_right = 267.0
+mouse_filter = 2
+deadzone_size = 48.0
+clampzone_size = 101.0
+visibility_mode = 1
+action_left = "left"
+action_right = "right"
+action_up = "up"
+action_down = "down"
+
+[node name="PauseMenu2" type="PanelContainer" parent="CanvasLayer"]
+visible = false
+z_index = 3
+anchors_preset = -1
+anchor_left = 0.34375
+anchor_top = 0.111111
+anchor_right = 0.65625
+anchor_bottom = 0.844136
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/PauseMenu2"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/PauseMenu2/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 10
+
+[node name="PauseLabel" type="Label" parent="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "YOU DIED
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Resume" type="Button" parent="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer"]
+visible = false
+layout_mode = 2
+text = "Respawn"
+script = ExtResource("11_eksi1")
+
+[node name="Label" type="Label" parent="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Respawning..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Options" type="Button" parent="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Options"
+
+[node name="Quit" type="Button" parent="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer"]
+visible = false
+layout_mode = 2
+text = "Quit"
+script = ExtResource("12_jincj")
+
+[node name="Label" type="Label" parent="CanvasLayer"]
+visible = false
+custom_minimum_size = Vector2(380, 50)
+anchors_preset = -1
+anchor_left = 0.335069
+anchor_top = 0.58179
+anchor_right = 0.664931
+anchor_bottom = 0.665123
+offset_top = -3.05176e-05
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("10_jhyir")
+theme_override_font_sizes/font_size = 23
+text = "PRESS F TO PICK UP"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="Label2" type="Label" parent="CanvasLayer"]
+custom_minimum_size = Vector2(380, 50)
+anchors_preset = -1
+anchor_left = 0.314236
+anchor_top = 0.878086
+anchor_right = 0.644098
+anchor_bottom = 0.961419
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("10_jhyir")
+theme_override_font_sizes/font_size = 23
+text = "PRESS F TO PICK UP"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="HealthBar" type="ProgressBar" parent="CanvasLayer"]
+offset_left = 21.0
+offset_top = 28.0
+offset_right = 221.0
+offset_bottom = 66.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_jhyir")
+theme_override_styles/fill = SubResource("StyleBoxFlat_74mp2")
+max_value = 200.0
+step = 1.0
+value = 200.0
+
+[node name="TrajectoryLine" type="MeshInstance3D" parent="."]
+top_level = true
+material_override = SubResource("StandardMaterial3D_74mp2")
+cast_shadow = 0
+mesh = SubResource("ImmediateMesh_oikmp")
+
+[node name="HeadCheckRay" type="RayCast3D" parent="."]
+target_position = Vector3(0, 2, 0)
+
+[node name="Camera3D2" type="Camera3D" parent="."]
+transform = Transform3D(0.998135, 0.0245383, -0.0558999, 0, 0.915663, 0.401948, 0.0610485, -0.401198, 0.913955, 0, 3.636, 6.609)
+cull_mask = 1048567
+
+[node name="Camera3D3" type="Camera3D" parent="."]
+transform = Transform3D(-1, 3.72228e-08, -7.91025e-08, 0, 0.904827, 0.425779, 8.74228e-08, 0.425779, -0.904827, 0, 2.12134, -1.91956)
+cull_mask = 1048567
+
+[connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="child_order_changed" from="MeshInstance3D" to="." method="_on_mesh_instance_3d_child_order_changed"]
+[connection signal="animation_finished" from="AnimationPlayer" to="." method="_on_animation_player_animation_finished"]
+[connection signal="pressed" from="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer/Resume" to="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer/Resume" method="_on_pressed"]
+[connection signal="pressed" from="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer/Options" to="CanvasLayer/PauseMenu2/MarginContainer/VBoxContainer/Resume" method="_on_options_pressed"]

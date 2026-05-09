@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3 uid="uid://cktm5mxxq787"]
+
+[ext_resource type="Script" uid="uid://vll43ax8bj5l" path="res://Scripts/World/pickup.gd" id="1_x1uhi"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_tgyaq"]
+radius = 1.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0ofxk"]
+albedo_color = Color(0.619579, 0, 0.256488, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_jxvec"]
+material = SubResource("StandardMaterial3D_0ofxk")
+
+[node name="Grenade" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("1_x1uhi")
+item_type = "grenade"
+item_name = "Grenade"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_tgyaq")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_jxvec")
