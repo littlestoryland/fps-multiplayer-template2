@@ -17,9 +17,9 @@ func _on_timer_timeout():
 func explode():
 	# 1. Damage Loop
 	var bodies = blast_radius.get_overlapping_bodies()
-	print("explo det" + str(bodies.size()) + "bodies.")
+	#print("explo det" + str(bodies.size()) + "bodies.")
 	for body in bodies:
-		print("checki" + body.name)
+		#print("checki" + body.name)
 		if body.has_method("receive_damage"):
 			var space_state = get_world_3d().direct_space_state
 			var start_pos = global_position + Vector3(0,0.5,0)
@@ -32,7 +32,7 @@ func explode():
 			var result = space_state.intersect_ray(query)
 			
 			if result and result.collider != body:
-				print("bbw" + result.collider.name)
+				#print("bbw" + result.collider.name)
 				continue
 			
 			# Calculate damage based on distance (Optional polish)
@@ -40,7 +40,7 @@ func explode():
 			var dmg = 100 - (dist * 10) # Closer = More ouch
 			dmg = clamp(dmg, 10, 100)
 			
-			print("dmg pl")
+			#print("dmg pl")
 			body.receive_damage.rpc(int(dmg), "Grenade")
 	
 	# 2. Visuals (Tell everyone to play the boom sound/particle)
@@ -52,7 +52,7 @@ func explode():
 @rpc("call_local")
 func play_effects():
 	$Node3D/AnimationPlayer.play("explode")
-	print("BOOM!")
+	#print("BOOM!")
 
 
 func _on_animation_player_animation_finished(anim_name: StringName) -> void:

@@ -23,12 +23,12 @@ texture = SubResource("NoiseTexture2D_uopuq")
 texture_type = 1
 
 [sub_resource type="VisualShaderNodeFrame" id="VisualShaderNodeFrame_v0k44"]
-size = Vector2(442.25, 172)
+size = Vector2(442.25, 350)
 title = "Dark base color"
 attached_nodes = PackedInt32Array(2, 3)
 
 [sub_resource type="VisualShaderNodeFrame" id="VisualShaderNodeFrame_k2amf"]
-size = Vector2(802.25, 372)
+size = Vector2(802.25, 610)
 title = "Emissive bright orange"
 tint_color_enabled = true
 tint_color = Color(0.466146, 0.324117, 0.324117, 0.75)
@@ -44,7 +44,7 @@ texture_type = 1
 linked_parent_graph_frame = 17
 
 [sub_resource type="VisualShaderNodeFrame" id="VisualShaderNodeFrame_tphv0"]
-size = Vector2(782.25, 372)
+size = Vector2(782.25, 404)
 title = "cloud dissaperer"
 tint_color_enabled = true
 tint_color = Color(0, 0.578125, 1, 0.75)
@@ -143,7 +143,7 @@ input_name = "time"
 
 [resource]
 code = "shader_type spatial;
-render_mode blend_mix, depth_draw_never, cull_back, diffuse_lambert, specular_schlick_ggx;
+render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_toon, specular_disabled, unshaded, shadows_disabled, vertex_lighting;
 
 uniform vec2 Cloud_Speed;
 uniform sampler2D tex_vtx_5;
@@ -289,7 +289,12 @@ void fragment() {
 
 }
 "
-modes/depth_draw = 2
+graph_offset = Vector2(-363.803, 47.624)
+modes/diffuse = 3
+modes/specular = 2
+flags/unshaded = true
+flags/shadows_disabled = true
+flags/vertex_lighting = true
 nodes/vertex/0/position = Vector2(980, 100)
 nodes/vertex/2/node = SubResource("VisualShaderNodeInput_mni2p")
 nodes/vertex/2/position = Vector2(320, 20)

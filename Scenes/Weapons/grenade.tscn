@@ -185,8 +185,12 @@ _data = {
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ffym8"]
 render_priority = 1
-blend_mode = 1
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
 shading_mode = 0
+diffuse_mode = 3
+specular_mode = 2
 albedo_color = Color(2, 0.6, 0.3, 1)
 albedo_texture = ExtResource("5_ebfn3")
 billboard_mode = 3
@@ -245,9 +249,8 @@ ignore_occlusion_culling = true
 emitting = false
 lifetime = 0.5
 one_shot = true
-explosiveness = 0.9
+explosiveness = 1.0
 randomness = 1.0
-fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_j6n2f")
 draw_pass_1 = SubResource("SphereMesh_euata")
 
@@ -258,9 +261,8 @@ ignore_occlusion_culling = true
 emitting = false
 lifetime = 0.5
 one_shot = true
-explosiveness = 0.9
+explosiveness = 1.0
 randomness = 1.0
-fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_ltlwk")
 draw_pass_1 = SubResource("QuadMesh_srknp")
 
@@ -283,7 +285,6 @@ amount = 1
 lifetime = 0.5
 one_shot = true
 explosiveness = 1.0
-fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_pqero")
 draw_pass_1 = SubResource("QuadMesh_cybwk")
 

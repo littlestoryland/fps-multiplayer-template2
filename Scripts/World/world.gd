@@ -10,6 +10,7 @@ extends Node
 const Player = preload("res://Scenes/Player/player.tscn")
 const PORT = 9999
 const LOOT_SCENE = preload("res://Scenes/World/lootbox.tscn")
+const EXPLOSION_SCENE = preload("res://Assets/World/explosion.tscn")
 
 
 var localpn : String = "Player"
@@ -19,6 +20,7 @@ var selectedcolor :Color = Color.WHITE
 var paused: bool = false
 var options: bool = false
 var controller: bool = false
+var is_mobile: bool = OS.has_feature("mobile")
 @export var w1: Environment
 @export var w2 : Environment
 @onready var kill_feed: VBoxContainer = $Menu/KillFeed
@@ -35,13 +37,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		controller = false
 
 func _process(_delta: float) -> void:
-	#var status = ResourceLoader.load_threaded_get_status()
-	#
 	if paused:
 		$Menu/Blur.show()
 		pause_menu.show()
-		if !controller:
+		
+		if !is_mobile and !controller:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		else:
+			if !is_mobile and !controller and !main_menu.visible:
+				Input.mouse_mode =  Input.MOUSE_MODE_CAPTURED
 
 func _on_resume_pressed() -> void:
 	if !options:
@@ -91,15 +95,41 @@ func ww():
 
 func _ready() -> void:
 	
+	warmup_explosions()
+	
 	ResourceLoader.load_threaded_request("res://Assets/World/explosion.tscn")
 	
-	ww()
+	#ww()
 	
 	multiplayer_spawner_2.spawn_function = spawn_loot
 	
 	if DisplayServer.get_name() == "headless" or OS.has_feature("dedicated_server"):
 		print("ser")
 		_on_host_button_pressedded()
+
+func warmup_explosions():
+	if not grenade_scene:
+		return
+	
+	var ghost = grenade_scene.instantiate()
+	add_child(ghost)
+	ghost.global_position = Vector3(0,-100,0)
+	
+	var explosion = EXPLOSION_SCENE.instantiate()
+	add_child(explosion)
+	explosion.global_position = Vector3(0,-100,0)
+	
+	var all_particles = explosion.find_children("*", "GPUparticles3D", true)
+	for p in all_particles:
+		p.emitting = true
+		p.one_shot = true
+	
+	await get_tree().create_timer(0.5).timeout
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	ghost.queue_free()
+	explosion.queue_free()
 
 func _on_host_button_pressedded():
 	enet_peer.create_server(PORT)
@@ -138,9 +168,11 @@ func _on_join_button_pressed() -> void:
 	$Menu/Blur.hide()
 	menu_music.stop()
 	
-	var address_entry_2 = %AddressEntry2.text.to_int()
+	var port_to_use = %AddressEntry2.text.to_int()
+	if port_to_use == 0:
+		port_to_use = PORT
 	
-	enet_peer.create_client(address_entry.text, address_entry_2)
+	enet_peer.create_client(address_entry.text, port_to_use)
 	if options_menu.visible:
 		options_menu.hide()
 	multiplayer.multiplayer_peer = enet_peer
@@ -161,8 +193,9 @@ func _on_music_toggle_toggled(toggled_on: bool) -> void:
 func add_player(peer_id: int) -> void:
 	var player: Node = Player.instantiate()
 	player.name = str(peer_id)
-	player.set_multiplayer_authority(peer_id)
 	add_child(player)
+	player.set_multiplayer_authority(peer_id)
+	
 	
 	await get_tree().process_frame
 	await get_tree().process_frame

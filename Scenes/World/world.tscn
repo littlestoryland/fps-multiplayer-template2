@@ -591,17 +591,18 @@ environment = ExtResource("3_hiquf")
 camera_attributes = SubResource("CameraAttributesPractical_wntx8")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(-0.835807, -0.47011, 0.283589, -0.375944, 0.866496, 0.328406, -0.400115, 0.167871, -0.900959, 0, 4.88489, 0)
-layers = 9
+transform = Transform3D(0.873601, -0.335613, 0.352398, -0.478107, -0.456889, 0.750111, -0.0907403, -0.823782, -0.559598, 0, 40, 0)
+layers = 31
 light_temperature = 4300.0
 light_energy = 5.0
 shadow_enabled = true
 shadow_bias = 0.0
+directional_shadow_mode = 0
 directional_shadow_split_1 = 0.04
 directional_shadow_split_2 = 0.11
 directional_shadow_split_3 = 0.33
 directional_shadow_blend_splits = true
-directional_shadow_max_distance = 99.3
+directional_shadow_max_distance = 40.0
 
 [node name="FpsCounter" type="Label" parent="."]
 offset_right = 40.0

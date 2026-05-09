@@ -1,7 +1,8 @@
-[gd_resource type="VisualShader" load_steps=15 format=3 uid="uid://bhw8e67lusomn"]
+[gd_resource type="VisualShader" load_steps=14 format=3 uid="uid://bhw8e67lusomn"]
 
 [ext_resource type="Texture2D" uid="uid://5jm2yex24jux" path="res://Assets/Textures/Explosion/T_4_streaks.png" id="1_rkxol"]
-[ext_resource type="Texture2D" uid="uid://bt5p3804xjp23" path="res://Assets/Textures/Explosion/T_PerlinNoise_Tiled11_inv.png" id="2_nembv"]
+[ext_resource type="Texture2D" uid="uid://cxwywbh540kfj" path="res://Resources/Curves/new_curve_texture1 streaks.tres" id="2_nembv"]
+[ext_resource type="Texture2D" uid="uid://dmt1tlvgh4hne" path="res://Resources/Curves/new_compressed_texture_2d.tres" id="3_0q4hw"]
 
 [sub_resource type="VisualShaderNodeSmoothStep" id="VisualShaderNodeSmoothStep_0q4hw"]
 
@@ -23,15 +24,8 @@ op_type = 1
 expanded_output_ports = [0]
 input_name = "color"
 
-[sub_resource type="Curve" id="Curve_ivbpe"]
-_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.244957, 0), 0.0, 0.0, 0, 0, Vector2(0.25103, 0.232256), 0.0, 0.0, 0, 0, Vector2(0.49395, 0.232256), 0.0, 0.0, 0, 0, Vector2(0.49396, 0.471193), 0.0, 0.0, 0, 0, Vector2(0.742943, 0.471193), 0.0, 0.0, 0, 0, Vector2(0.749016, 0.781811), 0.0, 0.0, 0, 0]
-point_count = 7
-
-[sub_resource type="CurveTexture" id="CurveTexture_ca5te"]
-curve = SubResource("Curve_ivbpe")
-
 [sub_resource type="VisualShaderNodeCurveTexture" id="VisualShaderNodeCurveTexture_eormd"]
-texture = SubResource("CurveTexture_ca5te")
+texture = ExtResource("2_nembv")
 
 [sub_resource type="VisualShaderNodeVectorCompose" id="VisualShaderNodeVectorCompose_8s5ir"]
 op_type = 0
@@ -40,12 +34,12 @@ op_type = 0
 parameter_name = "Streaks_color"
 
 [sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_gv1ws"]
-texture = ExtResource("2_nembv")
+texture = ExtResource("3_0q4hw")
 texture_type = 1
 
 [resource]
 code = "shader_type spatial;
-render_mode blend_mix, depth_draw_never, cull_disabled, diffuse_lambert, specular_schlick_ggx, unshaded;
+render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_toon, specular_disabled, unshaded, shadows_disabled, vertex_lighting;
 
 uniform vec4 Streaks_color : source_color;
 uniform sampler2D curve_frg_6 : repeat_disable;
@@ -108,9 +102,12 @@ void fragment() {
 
 }
 "
-modes/depth_draw = 2
-modes/cull = 2
+graph_offset = Vector2(539.563, 0)
+modes/diffuse = 3
+modes/specular = 2
 flags/unshaded = true
+flags/shadows_disabled = true
+flags/vertex_lighting = true
 nodes/fragment/0/position = Vector2(860, 100)
 nodes/fragment/2/node = SubResource("VisualShaderNodeTexture_lsp7o")
 nodes/fragment/2/position = Vector2(360, 100)
