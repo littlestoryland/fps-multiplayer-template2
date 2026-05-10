@@ -16,6 +16,7 @@ func _ready() -> void:
 	
 	update_visuals()
 
+@warning_ignore("untyped_declaration")
 func update_visuals():
 	# 1. Clean up
 	for child in weapon_holder.get_children():
@@ -27,7 +28,9 @@ func update_visuals():
 	# (Simple way: just create a new unique one below)
 
 	if contained_weapons.size() > 0:
+		@warning_ignore("untyped_declaration")
 		var entry = contained_weapons[0]
+		@warning_ignore("untyped_declaration")
 		var is_death_box = false
 		
 		# --- CHECK TYPE ---
@@ -50,6 +53,7 @@ func update_visuals():
 			# Just static placement (maybe reset rotation)
 			pivot.rotation = Vector3.ZERO
 			
+			@warning_ignore("untyped_declaration")
 			var res = load(entry["path"])
 			if res: current_weapon_name = "Loot: " + res.name
 			
@@ -62,29 +66,36 @@ func update_visuals():
 			active_tween = create_tween().set_loops().set_parallel(true)
 			active_tween.tween_property(pivot, "rotation:y", deg_to_rad(360), 4.0).as_relative()
 			# Bobbing
+			@warning_ignore("untyped_declaration")
 			var tween_bob = create_tween().set_loops()
 			tween_bob.tween_property(pivot, "position:y", 0.2, 1.0).as_relative().set_trans(Tween.TRANS_SINE)
 			tween_bob.tween_property(pivot, "position:y", -0.2, 1.0).as_relative().set_trans(Tween.TRANS_SINE)
 
 			# Load Model
+			@warning_ignore("untyped_declaration")
 			var path = ""
 			if typeof(entry) == TYPE_DICTIONARY: path = entry["path"]
 			else: path = str(entry)
 			
+			@warning_ignore("untyped_declaration")
 			var res = load(path)
 			if res:
 				current_weapon_name = res.name 
 				if res.Weapon_Scene:
+					@warning_ignore("untyped_declaration")
 					var model = res.Weapon_Scene.instantiate()
 					weapon_holder.add_child(model)
 					model.scale = Vector3(1.5, 1.5, 1.5)
 	else:
 		queue_free()
 
+@warning_ignore("untyped_declaration")
 func interact(player_node):
 	if contained_weapons.size() > 0:
+		@warning_ignore("untyped_declaration")
 		var entry = contained_weapons[0]
 		
+		@warning_ignore("untyped_declaration")
 		var path_to_give = ""
 		
 		if typeof(entry) == TYPE_DICTIONARY:
@@ -92,7 +103,20 @@ func interact(player_node):
 		else:
 			path_to_give = str(entry)
 		
-		player_node.equip_weapon.rpc(path_to_give)
-		queue_free()
+		player_node.pickup_weapon(path_to_give)
+		destroy_box.rpc_id(1)
+		
 		#contained_weapons.remove_at(0)
 		#update_visuals()
+
+@rpc("any_peer","call_local","reliable")
+func destroy_box():
+	if not multiplayer.is_server():
+		return
+	
+	force_delete_on_clients.rpc(self.name)
+
+@rpc("authority","call_local","reliable")
+func force_delete_on_clients(node_name:String):
+	if self.name == node_name:
+		queue_free()

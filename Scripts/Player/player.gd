@@ -130,6 +130,9 @@ func _ready() -> void:
 	update_health_ui()
 	update_ammo_ui()
 	update_visuals()
+	
+	if not is_multiplayer_authority():
+		request_state_sync.rpc_id(get_multiplayer_authority())
 
 # -------------------------------------------------------------------------
 # 5. INPUT & PROCESS
@@ -252,7 +255,7 @@ func shoot() -> void:
 	if raycast.is_colliding():
 		var collider = raycast.get_collider()
 		if collider and collider.has_method("receive_damage"):
-			collider.receive_damage.rpc_id(collider.get_multiplayer_authority(), current_weapon.damage, multiplayer.get_unique_id())
+			collider.receive_damage.rpc_id(collider.get_multiplayer_authority(), current_weapon.damage, playername)
 			
 
 @rpc("call_remote","unreliable")
@@ -284,7 +287,7 @@ func receive_damage(damage: int, attn: String) -> void:
 				if inventory[i]:
 					drops.append({"path": inventory[i].resource_path, "ammo": ammo_in_mag[i], "is_death": true})
 			if drops.size() > 0:
-				get_parent().spawn_loot_request(position, drops)
+				get_parent().spawn_loot_request.rpc(position, drops)
 			
 			var pistol = load("res://Resources/Weapons/Pistol.tres")
 			inventory = [pistol, null, null]
@@ -313,11 +316,11 @@ func receive_damage(damage: int, attn: String) -> void:
 
 @rpc("call_local","reliable")
 func sync_weapon_change(new_slot : int):
-	if current_slot == new_slot or is_reloading or is_healing or is_dead:
-		return
-	
-	if inventory[new_slot] == null:
-		return
+	#if current_slot == new_slot or is_reloading or is_healing or is_dead:
+		#return
+	#
+	#if inventory[new_slot] == null:
+		#return
 	
 	current_slot = new_slot
 	current_weapon = inventory[current_slot]
@@ -326,8 +329,8 @@ func sync_weapon_change(new_slot : int):
 	
 	spawn_gun_visuals(current_weapon)
 	
-	var weapon_path = current_weapon.resource_path
-	sync_visual_switch.rpc(weapon_path)
+	#var weapon_path = current_weapon.resource_path
+	#sync_visual_switch.rpc(weapon_path)
 	
 	#var new_weapon_res = load(weapon_path)
 	#if not new_weapon_res: return
@@ -364,7 +367,7 @@ func sync_weapon_change(new_slot : int):
 	#spawn_gun_visuals(new_weapon_res)
 
 func equip_slot(index: int):
-	if index < 0 or index >= inventory.size(): return
+	if index < 0 or index >= inventory.size() or current_slot == index : return
 	
 	current_slot = index
 	
@@ -376,12 +379,12 @@ func equip_slot(index: int):
 	
 	sync_weapon_change.rpc(index)
 	
-	current_weapon = inventory[index]
-	spawn_gun_visuals(current_weapon)
-	sync_visual_switch.rpc(current_weapon.resource_path)
-	update_ammo_ui()
+	#current_weapon = inventory[index]
+	#spawn_gun_visuals(current_weapon)
+	#sync_visual_switch.rpc(current_weapon.resource_path)
+	#update_ammo_ui()
 
-@rpc("any_peer","call_local","reliable")
+#@rpc("any_peer","call_local","reliable")
 func equip_weapon(weapon_path:String):
 	var new_weapon = load(weapon_path)
 	if not new_weapon:
@@ -406,11 +409,11 @@ func equip_weapon(weapon_path:String):
 	current_slot = -1
 	equip_slot(target_slot)
 
-@rpc("any_peer","call_remote","reliable")
-func sync_visual_switch(weapon_path: String):
-	var res = load(weapon_path)
-	if res:
-		spawn_gun_visuals(res)
+#@rpc("any_peer","call_remote","reliable")
+#func sync_visual_switch(weapon_path: String):
+	#var res = load(weapon_path)
+	#if res:
+		#spawn_gun_visuals(res)
 
 func spawn_gun_visuals(weapon_res : WeaponData):
 	if current_gun_node:
@@ -459,6 +462,33 @@ func reload():
 		reserve_ammo[current_slot] -= load_amt
 	is_reloading = false
 	update_ammo_ui()
+
+func pickup_weapon(weapon_path:String):
+	var target_slot = current_slot
+	if inventory[0] == null:
+		target_slot = 0
+	elif inventory[1] == null:
+		target_slot = 1
+	
+	sync_pickup.rpc(weapon_path,target_slot)
+
+@rpc("any_peer","call_local","reliable")
+func sync_pickup(weapon_path: String, target_slot:int):
+	var new_weapon = load(weapon_path)
+	if not new_weapon:
+		return
+	
+	if is_multiplayer_authority() and inventory[target_slot] != null and inventory[target_slot] != new_weapon:
+		var drop_data = [{"path" : inventory[target_slot].resource_path, "ammo":ammo_in_mag[target_slot], "is_death": false}]
+		get_parent().spawn_loot_request.rpc(position, drop_data)
+	
+	inventory[target_slot] = new_weapon
+	
+	if "clip_size" in new_weapon:
+		ammo_in_mag[target_slot] = new_weapon.clip_size
+	
+	current_slot = -1
+	equip_slot(target_slot)
 
 @rpc("unreliable", "call_remote")
 func update_rotation_x(angle: float): 
@@ -518,3 +548,27 @@ func use_medkit():
 	health = min(health + 70, 200)
 	sync_health.rpc(health)
 	is_healing = false
+
+@rpc("any_peer","call_remote","reliable")
+func request_state_sync():
+	if is_multiplayer_authority():
+		var requester = multiplayer.get_remote_sender_id()
+		var path0 = inventory[0].resource_path if inventory[0] != null else ""
+		var path1 = inventory[1].resource_path if inventory[1] != null else ""
+		
+		receive_state_sync.rpc_id(requester, path0,path1,current_slot,health)
+
+@rpc("authority","call_remote","reliable")
+func receive_state_sync(path0: String, path1:String, active_slot:int , current_hp: int):
+	if path0 != "":
+		inventory[0] = load(path0)
+	if path1 != "":
+		inventory[1] = load(path1)
+	
+	health = current_hp
+	update_health_ui()
+	
+	if active_slot != -1 and inventory[active_slot] != null:
+		current_slot = active_slot
+		current_weapon = inventory[current_slot]
+		spawn_gun_visuals(current_weapon)
