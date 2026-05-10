@@ -11,8 +11,6 @@ extends CharacterBody3D
 @onready var interact_ray: RayCast3D = $Camera3D/InteractRay
 @onready var ammo_label: Label = $CanvasLayer/Label2
 @onready var health_bar: ProgressBar = $CanvasLayer/HealthBar
-@onready var stamina_bar: ProgressBar = $CanvasLayer/StaminaBar 
-@onready var trajectory_line: MeshInstance3D = $TrajectoryLine
 @onready var weapon_camera: Camera3D = $Camera3D/SubViewport/SubViewport/WeaponCamera
 @onready var mesh_node: MeshInstance3D = $MeshInstance3D
 @onready var collision_node: CollisionShape3D = $CollisionShape3D
@@ -21,31 +19,18 @@ extends CharacterBody3D
 # -------------------------------------------------------------------------
 # 2. SETTINGS & PRELOADS
 # -------------------------------------------------------------------------
-const GRENADE_SCENE = preload("res://Scenes/Weapons/grenade.tscn")
 
 @export_group("Gameplay Settings")
 @export var health : int = 200
-@export var max_stamina : float = 100.0
-@export var stamina_regen : float = 15.0
-@export var slide_cost : float = 25.0
-@export var ads_speed : float = 12.0
-@export var infinite_reserves:bool = false
-@export var grenade_count: int = 2
+@export var infinite_reserves:bool = true
 @export var medkit_count:int = 1
-# This delay is for mobile users only now
-@export var auto_run_delay : float = 0.4 
 @export var spawns: PackedVector3Array = ([
 	Vector3(-18, 0.2, 0), Vector3(18, 0.2, 0), Vector3(-2.8, 0.2, -6),
 	Vector3(-17,0,17), Vector3(17,0,17), Vector3(17,0,-17), Vector3(-17,0,-17)
 ])
 
-@export_group("Recoil Settings")
-@export var recoil_kick : float = 0.05 
-@export var recoil_snap : float = 10.0 
-@export var recoil_recover : float = 6.0 
-
 @export_group("Inventory")
-@export var inventory : Array[WeaponData] = [null, null, null]
+@export var inventory : Array[WeaponData] = [null, null]
 @export var current_weapon : WeaponData
 
 @export_group("Multiplayer Sync")
@@ -64,39 +49,12 @@ const GRENADE_SCENE = preload("res://Scenes/Weapons/grenade.tscn")
 # MOVEMENT
 var current_speed = 5.5
 const WALK_SPEED = 5.5
-const SPRINT_SPEED = 9.0  
-const SLIDE_SPEED = 14.0 
-const SLIDE_FRICTION = 8.0 
-const CROUCH_SPEED = 2.5
 const JUMP_VELOCITY = 4.5
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 var last_fall_velocity = 0.0 
-var stamina : float = 100.0
-
-# TOGGLES & AUTO-RUN
-var toggle_sprint : bool = false
-var toggle_aim : bool = false
-var auto_run : bool = false 
-var run_hold_timer : float = 0.0
-var is_pc : bool = false # FIX: Detects if using PC
-
-# CROUCH / SLIDE
-var standing_height = 2.0
-var crouch_height = 1.4      
 var default_cam_height = 1.6
-var crouch_cam_height = 1.1  
-var is_crouched : bool = false
-var wants_to_crouch : bool = false
 
-# SLIDING
-var is_sliding : bool = false
-var slide_direction : Vector3 = Vector3.ZERO
-var net_is_sliding : bool = false 
-
-# RECOIL & LOOK
-var cam_rot_x : float = 0.0 
-var current_recoil_x : float = 0.0
-var target_recoil_x : float = 0.0
+var cam_rot_x : float = 0.0
 
 # INPUT
 var sensitivity : float =  0.002 
@@ -104,6 +62,7 @@ var controller_sensitivity : float =  0.005
 var axis_vector : Vector2
 var mouse_captured : bool = true
 var synced_rotation_x : float = 0.0 
+var is_pc : bool = false 
 
 # WEAPON STATE
 var current_gun_node : Node3D = null
@@ -112,16 +71,9 @@ var current_slot : int = 0
 var is_dead:bool = false
 var is_reloading : bool = false
 var is_healing : bool = false
-var ammo_in_mag : Array[int] = [0,0,0]
-var reserve_ammo : Array = [0,0,0]
-var throw_force = 20.0 
+var ammo_in_mag : Array[int] = [0,0]
+var reserve_ammo : Array = [0,0]
 
-# AIMING
-var current_aim_pos: Vector3 = Vector3(0,0,0)
-var current_aim_fov : float = 75.0
-var default_pos: Vector3 = Vector3(0,0,0)
-var default_fov : float = 75.0
-var is_aiming_synced : bool = false
 
 # -------------------------------------------------------------------------
 # 4. SETUP
@@ -132,7 +84,6 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	$Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D.position = Vector3(0,0,0)
 	default_cam_height = camera.position.y
-	stamina = max_stamina
 	cam_rot_x = camera.rotation.x
 	
 	# Detect Platform
@@ -197,19 +148,20 @@ func _input(event: InputEvent) -> void:
 		cam_rot_x = clamp(cam_rot_x, -PI/2, PI/2)
 
 func _process(delta: float) -> void:
-	if net_is_sliding and mesh_node:
-		mesh_node.rotation_degrees.x = 30 
-	elif mesh_node and not net_is_sliding:
-		mesh_node.rotation_degrees.x = move_toward(mesh_node.rotation_degrees.x, 0, 100 * delta)
-
-	if not is_multiplayer_authority(): return
+	if not is_multiplayer_authority(): 
+		return
 	
-	target_recoil_x = lerp(target_recoil_x, 0.0, recoil_recover * delta)
-	current_recoil_x = lerp(current_recoil_x, target_recoil_x, recoil_snap * delta)
+	camera.rotation.x = cam_rot_x
 	
-	camera.rotation.x = cam_rot_x + current_recoil_x
-	weapon_camera.rotation.x = camera.rotation.x
-
+	if weapon_camera:
+		weapon_camera.rotation.x = camera.rotation.x
+		weapon_camera.global_transform = camera.global_transform
+	
+	if axis_vector != Vector2.ZERO:
+		rotate_y(-axis_vector.x * controller_sensitivity)
+		cam_rot_x -= axis_vector.y * controller_sensitivity
+		cam_rot_x = clamp(cam_rot_x, -PI/2, PI/2)
+	
 	if interact_ray.is_colliding():
 		var object = interact_ray.get_collider()
 		var loot_root = null
@@ -225,18 +177,19 @@ func _process(delta: float) -> void:
 			interact_label.hide()
 	else:
 		interact_label.hide()
-
-	if axis_vector != Vector2.ZERO:
-		rotate_y(-axis_vector.x * controller_sensitivity)
-		cam_rot_x -= axis_vector.y * controller_sensitivity
-		cam_rot_x = clamp(cam_rot_x, -PI/2, PI/2)
-
-	if weapon_camera and is_multiplayer_authority():
-		weapon_camera.global_transform = camera.global_transform
-		
+	
 	if Input.is_action_just_pressed("med"): 
-		auto_run = false
 		use_medkit.rpc()
+	
+	if Input.is_action_pressed("shoot") and not is_reloading and not is_healing and not is_dead:
+		if current_weapon != null:
+			var current_time = Time.get_ticks_msec() / 1000.0
+			if current_time - last_fire_time >= current_weapon.fire_rate:
+				if ammo_in_mag[current_slot] > 0:
+					shoot()
+					last_fire_time = current_time
+				else:
+					reload()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_multiplayer_authority() or is_dead: return
@@ -248,252 +201,64 @@ func _unhandled_input(event: InputEvent) -> void:
 	if Input.is_action_just_pressed("rel"): reload()
 	if Input.is_action_just_pressed("respawn"): receive_damage(200, "world")
 
-	if Input.is_action_pressed("throw grenade") and grenade_count > 0:
-		auto_run = false
-		trajectory_line.show()
-		var dir = -camera.global_transform.basis.z + Vector3(0, 0.5, 0)
-		update_trajectory(dir.normalized())
-	else:
-		trajectory_line.hide()
-		
-	if Input.is_action_just_released("throw grenade"):
-		trajectory_line.hide()
-		if grenade_count > 0:
-			grenade_count -= 1
-			pickup_item("grenade", 0) 
-			var dir = -camera.global_transform.basis.z + Vector3(0, 0.5, 0)
-			request_grenade.rpc_id(1, dir.normalized())
 # -------------------------------------------------------------------------
 # 6. PHYSICS
 # -------------------------------------------------------------------------
 func _physics_process(delta: float) -> void:
-	if is_multiplayer_authority():
-		if abs(camera.rotation.x - synced_rotation_x) > 0.01:
-			update_rotation_x.rpc(camera.rotation.x)
-			synced_rotation_x = camera.rotation.x
-	else:
-		camera.rotation.x = lerp(camera.rotation.x, synced_rotation_x, 20 * delta)
-		return 
-
-	if is_dead: 
-		move_and_slide()
+	if not is_multiplayer_authority():
 		return
-
-	# 1. SHOOTING
-	if current_weapon and current_weapon is WeaponData:
-		var attempt_fire = false
-		if current_weapon.is_automatic: attempt_fire = Input.is_action_pressed("shoot")
-		else: attempt_fire = Input.is_action_just_pressed("shoot")
-		
-		if attempt_fire:
-			auto_run = false 
-			if not is_reloading and not is_healing:
-				if ammo_in_mag[current_slot] > 0:
-					var time_now = Time.get_ticks_msec() / 1000.0
-					if time_now - last_fire_time >= current_weapon.fire_rate:
-						ammo_in_mag[current_slot] -= 1
-						update_ammo_ui()
-						shoot.rpc()
-						is_healing = false
-						last_fire_time = time_now
-				else:
-					reload()
-
-	# 2. GRAVITY
+	
+	if is_dead: 
+		return
+	
 	if not is_on_floor():
-		velocity += get_gravity() * delta
-		last_fall_velocity = velocity.y 
-	else:
-		if last_fall_velocity < -15.0: 
-			var damage = abs(last_fall_velocity) * 1.5 
-			receive_damage(int(damage), "fall")
-		last_fall_velocity = 0.0
-
-	# 3. JUMP
+		velocity.y -= gravity * delta
+	
 	if Input.is_action_just_pressed("jump") and is_on_floor():
-		if is_sliding:
-			stop_slide.rpc() 
-			velocity.y = JUMP_VELOCITY * 1.2 
-		elif is_crouched:
-			wants_to_crouch = false
-			set_crouch.rpc(false)
-			velocity.y = JUMP_VELOCITY
-		else:
-			velocity.y = JUMP_VELOCITY
-
-	# 4. AIMING
-	if Input.is_action_just_pressed("aim"):
-		toggle_aim = !toggle_aim
-		set_aiming.rpc(toggle_aim)
-		is_aiming_synced = toggle_aim
-
-	var target_fov = default_fov
-	var target_pos = default_pos
+		velocity.y = JUMP_VELOCITY
 	
-	if toggle_aim:
-		if anim_player.current_animation != "shoot" and anim_player.current_animation != "RESET":
-			anim_player.play("RESET")
-		target_fov = current_aim_fov
-		target_pos = current_aim_pos
-	
-	camera.fov = lerp(camera.fov, target_fov, ads_speed * delta)
-	weapon_camera.fov = lerp(weapon_camera.fov, target_fov, ads_speed * delta)
-	var pivot = $Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D
-	pivot.position = pivot.position.lerp(target_pos, ads_speed * delta)
-
-	# 5. MOVEMENT & AUTO-RUN (Platform Specific)
 	var input_dir := Input.get_vector("left", "right", "up", "down")
 	
-	# FIX: Only run Auto-Run logic on Mobile
-	if not is_pc:
-		# AUTO-RUN TRIGGERS
-		if input_dir.y < -0.95:
-			run_hold_timer += delta
-			if run_hold_timer >= auto_run_delay:
-				auto_run = true
-				toggle_sprint = true
-		else:
-			run_hold_timer = 0.0
-			# Cancel if pulling back/sideways
-			if input_dir.length() > 0.1:
-				auto_run = false
-				if input_dir.y > -0.5: toggle_sprint = false
-	
-	# APPLY AUTO-RUN
-	if auto_run and input_dir.length() == 0:
-		input_dir.y = -1.0
-	
 	var move_dir := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-	if is_healing and input_dir != Vector2.ZERO: is_healing = false
-
-	# BUTTON TOGGLE (Works on PC & Mobile)
-	if Input.is_action_just_pressed("sprint"):
-		toggle_sprint = !toggle_sprint
-		if not toggle_sprint: auto_run = false
+	current_speed = WALK_SPEED
 	
-	# Stop logic
-	if stamina <= 0:
-		toggle_sprint = false
-		auto_run = false
-	
-	# FIX: On PC, stop sprinting instantly if you stop moving
-	if is_pc and move_dir.length() == 0:
-		toggle_sprint = false
-
-	if not is_sliding and not toggle_sprint:
-		stamina = move_toward(stamina, max_stamina, stamina_regen * delta)
-	
-	# Slide Logic
-	if Input.is_action_just_pressed("slide") and is_on_floor() and not is_sliding:
-		if current_speed >= SPRINT_SPEED - 0.1 and stamina >= slide_cost:
-			stamina -= slide_cost
-			start_slide.rpc(move_dir)
-	
-	if is_sliding:
-		current_speed = move_toward(current_speed, 0.0, SLIDE_FRICTION * delta)
-		velocity.x = slide_direction.x * current_speed
-		velocity.z = slide_direction.z * current_speed
-		camera.position.y = lerp(camera.position.y, crouch_cam_height, 10 * delta)
-		
-		if current_speed < CROUCH_SPEED:
-			stop_slide.rpc()
+	if move_dir:
+		velocity.x = move_dir.x * current_speed
+		velocity.z = move_dir.z * current_speed
 	else:
-		if Input.is_action_just_pressed("crouch"): 
-			wants_to_crouch = !wants_to_crouch
-			if wants_to_crouch: auto_run = false
-			
-		var head_blocked = head_check_ray.is_colliding()
-		var should_crouch = wants_to_crouch or head_blocked
-		if should_crouch != is_crouched: set_crouch.rpc(should_crouch)
-		
-		if is_crouched:
-			current_speed = CROUCH_SPEED
-			camera.position.y = lerp(camera.position.y, crouch_cam_height, 10 * delta)
-		else:
-			if toggle_sprint and is_on_floor() and not toggle_aim and input_dir.y < 0 and stamina > 0:
-				current_speed = SPRINT_SPEED
-				stamina -= 10.0 * delta 
-			else:
-				current_speed = WALK_SPEED
-			
-			camera.position.y = lerp(camera.position.y, default_cam_height, 10 * delta)
-			
-		if move_dir:
-			velocity.x = move_dir.x * current_speed
-			velocity.z = move_dir.z * current_speed
-			if is_on_floor() and anim_player.current_animation != "shoot" and not toggle_aim:
-				anim_player.play("move")
-		else:
-			velocity.x = move_toward(velocity.x, 0, current_speed)
-			velocity.z = move_toward(velocity.z, 0, current_speed)
-			if is_on_floor() and anim_player.current_animation != "shoot" and not toggle_aim:
-				anim_player.play("idle")
-
-		if Input.is_action_just_pressed("back"):
-			$Camera3D2.current = true
-		if Input.is_action_just_pressed("front"):
-			$Camera3D3.current = true
-		if Input.is_action_just_pressed("norm"):
-			$Camera3D.current = true
-
+		velocity.x = move_toward(velocity.x,0,current_speed)
+		velocity.z = move_toward(velocity.z,0,current_speed)
+	
+	if is_healing and input_dir != Vector2.ZERO: is_healing = false
 	move_and_slide()
-	if stamina_bar: stamina_bar.value = stamina
 
 # -------------------------------------------------------------------------
 # 7. RPCs & UTILS
 # -------------------------------------------------------------------------
 @rpc("call_local")
-func start_slide(dir: Vector3):
-	is_sliding = true
-	net_is_sliding = true 
-	slide_direction = dir
-	current_speed = SLIDE_SPEED
-	if collision_node:
-		collision_node.shape.height = crouch_height
-		collision_node.position.y = crouch_height / 2.0
-	if mesh_node:
-		var tween = create_tween()
-		tween.tween_property(mesh_node, "scale", Vector3(1, 0.7, 1), 0.1)
-
-@rpc("call_local")
-func stop_slide():
-	is_sliding = false
-	net_is_sliding = false
-	if collision_node:
-		collision_node.shape.height = standing_height
-		collision_node.position.y = standing_height / 2.0
-	if mesh_node:
-		var tween = create_tween()
-		tween.tween_property(mesh_node, "scale", Vector3(1, 1, 1), 0.1)
-	is_crouched = false
-	wants_to_crouch = false
-
-@rpc("call_local")
 func shoot() -> void:
+	ammo_in_mag[current_slot] -= 1
+	update_ammo_ui()
+	
 	if anim_player:
 		anim_player.stop()
 		anim_player.play("shoot")
 	
-	target_recoil_x -= recoil_kick
+	play_shoot_effects.rpc()
 	
-	if current_weapon and current_weapon.shoot_sound:
-		var sfx = AudioStreamPlayer3D.new()
-		sfx.stream = current_weapon.shoot_sound
-		sfx.pitch_scale = randf_range(0.95, 1.05)
-		sfx.max_distance = 50
-		gun_holder.add_child(sfx)
-		sfx.play()
-		sfx.finished.connect(sfx.queue_free)
-	
-	if is_multiplayer_authority():
-		if raycast.is_colliding():
-			var collider = raycast.get_collider()
-			if collider and str(collider).contains("CharacterBody3D"):
-				collider.receive_damage.rpc_id(
-					collider.get_multiplayer_authority(),
-					current_weapon.damage,
-					playername
-				)
+
+	if raycast.is_colliding():
+		var collider = raycast.get_collider()
+		if collider and collider.has_method("receive_damage"):
+			collider.receive_damage.rpc_id(collider.get_multiplayer_authority(), current_weapon.damage, multiplayer.get_unique_id())
+			
+
+@rpc("call_remote","unreliable")
+func play_shoot_effects():
+	if current_gun_node and current_gun_node.has_node("AnimationPlayer"):
+		var gun_anim = current_gun_node.get_node("AnimationPlayer")
+		gun_anim.stop()
+		gun_anim.play("shoot")
 
 @rpc("call_local")
 func sync_health(new_val: int):
@@ -509,10 +274,6 @@ func receive_damage(damage: int, attn: String) -> void:
 	if health <= 0:
 		health = 200
 		is_dead = true
-		wants_to_crouch = false
-		is_crouched = false
-		stop_slide.rpc()
-		set_crouch(false)
 		camera.position.y = default_cam_height
 		
 		if is_multiplayer_authority():
@@ -543,23 +304,6 @@ func receive_damage(damage: int, attn: String) -> void:
 			position = spawns[randi() % spawns.size()]
 			health = 200
 			sync_health.rpc(200)
-
-@rpc("call_local")
-func set_crouch(crouching: bool):
-	if is_sliding: return
-	is_crouched = crouching
-	var target_height = crouch_height if crouching else standing_height
-	var target_y = target_height / 2.0 
-	if collision_node:
-		collision_node.shape.height = target_height
-		collision_node.position.y = target_y
-	if mesh_node:
-		var target_scale = Vector3(1, 0.7, 1) if crouching else Vector3(1, 1, 1)
-		var target_pos = Vector3(0, target_y, 0)
-		var tween = create_tween()
-		tween.set_parallel(true)
-		tween.tween_property(mesh_node, "scale", target_scale, 0.1)
-		tween.tween_property(mesh_node, "position", target_pos, 0.1)
 
 # -------------------------------------------------------------------------
 # 8. WEAPON SYNC & INVENTORY
@@ -617,16 +361,6 @@ func equip_slot(index: int):
 	sync_visual_switch.rpc(current_weapon.resource_path)
 	update_ammo_ui()
 	
-	if "aim_position" in current_weapon: 
-		current_aim_pos = current_weapon.aim_position
-	else: 
-		current_aim_pos = default_pos
-		
-	if "aim_fov" in current_weapon and current_weapon.aim_fov > 0: 
-		current_aim_fov = current_weapon.aim_fov
-	else: 
-		current_aim_fov = default_fov
-
 @rpc("call_local")
 func sync_visual_switch(weapon_path: String):
 	var res = load(weapon_path)
@@ -683,10 +417,6 @@ func reload():
 func update_rotation_x(angle: float): 
 	synced_rotation_x = angle
 
-@rpc("call_local")
-func set_aiming(aiming: bool): 
-	is_aiming_synced = aiming
-
 func update_health_ui(): 
 	if health_bar: health_bar.value = health
 
@@ -695,56 +425,6 @@ func update_ammo_ui():
 		ammo_label.text = str(ammo_in_mag[current_slot]) + ("/ Inf" if infinite_reserves else " / " + str(reserve_ammo[current_slot]))
 	else: 
 		ammo_label.text = ""
-
-func update_grenade_ui():
-	pass
-
-@rpc("any_peer", "call_local")
-func request_grenade(dir: Vector3):
-	if not multiplayer.is_server(): return
-	var sender_id = multiplayer.get_remote_sender_id()
-	var sender = get_parent().get_node_or_null(str(sender_id))
-	var spawn_pos = Vector3.ZERO
-	if sender and sender.has_node("Camera3D"):
-		spawn_pos = sender.get_node("Camera3D").global_position
-	else:
-		spawn_pos = camera.global_position
-	sync_grenade_throw.rpc(dir, spawn_pos)
-
-@rpc("call_local")
-func sync_grenade_throw(dir: Vector3, spawn_pos: Vector3):
-	var nade = GRENADE_SCENE.instantiate()
-	get_parent().add_child(nade)
-	nade.global_position = spawn_pos + Vector3(0, -0.3, 0)
-	if nade is RigidBody3D: 
-		nade.apply_impulse(dir * 25.0)
-
-func update_trajectory(dir: Vector3):
-	var mesh = trajectory_line.mesh as ImmediateMesh
-	mesh.clear_surfaces()
-	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
-	var pos = camera.to_global(Vector3(0.2,-0.3,0.0))
-	var vel = dir * throw_force
-	var thickness = 0.1
-	var cam_right = camera.global_transform.basis.x.normalized() * thickness
-	for i in range(70):
-		var delta_t = 0.03
-		var new_pos = pos + (vel * delta_t)
-		vel.y -= gravity * delta_t
-		var space = get_world_3d().direct_space_state
-		var query = PhysicsRayQueryParameters3D.create(pos, new_pos)
-		query.collision_mask = 1 
-		query.exclude = [self]
-		var collision = space.intersect_ray(query)
-		if collision:
-			mesh.surface_add_vertex(collision.position - cam_right)
-			mesh.surface_add_vertex(collision.position + cam_right)
-			break 
-		mesh.surface_add_vertex(new_pos - cam_right)
-		mesh.surface_add_vertex(new_pos + cam_right)
-		pos = new_pos
-		if pos.y < -50: break
-	mesh.surface_end()
 
 func update_visuals():
 	if not is_node_ready(): await ready
@@ -780,9 +460,7 @@ func pickup_item(type:String, amount:int):
 		if current_slot != -1 and current_weapon: 
 			reserve_ammo[current_slot] += amount
 			update_ammo_ui()
-	elif type == "grenade": 
-		grenade_count += amount
-		update_grenade_ui()
+
 
 @rpc("call_local") 
 func use_medkit():

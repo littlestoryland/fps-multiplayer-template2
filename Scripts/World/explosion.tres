@@ -23,12 +23,12 @@ texture = SubResource("NoiseTexture2D_uopuq")
 texture_type = 1
 
 [sub_resource type="VisualShaderNodeFrame" id="VisualShaderNodeFrame_v0k44"]
-size = Vector2(442.25, 350)
+size = Vector2(442.25, 172)
 title = "Dark base color"
 attached_nodes = PackedInt32Array(2, 3)
 
 [sub_resource type="VisualShaderNodeFrame" id="VisualShaderNodeFrame_k2amf"]
-size = Vector2(802.25, 610)
+size = Vector2(802.25, 372)
 title = "Emissive bright orange"
 tint_color_enabled = true
 tint_color = Color(0.466146, 0.324117, 0.324117, 0.75)
@@ -44,7 +44,7 @@ texture_type = 1
 linked_parent_graph_frame = 17
 
 [sub_resource type="VisualShaderNodeFrame" id="VisualShaderNodeFrame_tphv0"]
-size = Vector2(782.25, 404)
+size = Vector2(782.25, 372)
 title = "cloud dissaperer"
 tint_color_enabled = true
 tint_color = Color(0, 0.578125, 1, 0.75)
@@ -289,7 +289,6 @@ void fragment() {
 
 }
 "
-graph_offset = Vector2(-363.803, 47.624)
 modes/diffuse = 3
 modes/specular = 2
 flags/unshaded = true

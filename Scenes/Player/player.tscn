@@ -188,8 +188,6 @@ albedo_color = Color(1, 0.504962, 0.438302, 1)
 [node name="player" type="CharacterBody3D" groups=["Player"]]
 collision_layer = 2
 script = ExtResource("1_oikmp")
-infinite_reserves = true
-recoil_kick = 0.2
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
