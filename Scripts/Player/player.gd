@@ -149,6 +149,7 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if not is_multiplayer_authority(): 
+		camera.rotation.x = lerp(camera.rotation.x,synced_rotation_x,15.0 * delta)
 		return
 	
 	camera.rotation.x = cam_rot_x
@@ -231,6 +232,7 @@ func _physics_process(delta: float) -> void:
 	
 	if is_healing and input_dir != Vector2.ZERO: is_healing = false
 	move_and_slide()
+	update_rotation_x.rpc(cam_rot_x)
 
 # -------------------------------------------------------------------------
 # 7. RPCs & UTILS
@@ -310,40 +312,56 @@ func receive_damage(damage: int, attn: String) -> void:
 # -------------------------------------------------------------------------
 
 @rpc("call_local","reliable")
-func sync_weapon_change(weapon_path: String, incoming_ammo: int = -1):
-	var new_weapon_res = load(weapon_path)
-	if not new_weapon_res: return
+func sync_weapon_change(new_slot : int):
+	if current_slot == new_slot or is_reloading or is_healing or is_dead:
+		return
 	
-	if is_multiplayer_authority():
-		var is_new_pistol = "Pistol" in weapon_path or "pistol" in weapon_path
-		var target_slot = 0 if is_new_pistol else -1
-		
-		if target_slot == -1:
-			if inventory[1] == null: target_slot = 1
-			elif inventory[2] == null: target_slot = 2
-			else: target_slot = current_slot if current_slot != 0 else 1
-		
-		var current_res = inventory[target_slot]
-		if current_res != null and current_res.resource_path == new_weapon_res.resource_path:
-			var ammo_to_add = incoming_ammo if incoming_ammo != -1 else new_weapon_res.clip_size
-			reserve_ammo[target_slot] += ammo_to_add
-			update_ammo_ui()
-			return
-
-		if inventory[target_slot] != null:
-			var old_res = inventory[target_slot]
-			var old_ammo = ammo_in_mag[target_slot]
-			var drop_data = [{"path": old_res.resource_path, "ammo": old_ammo, "is_death": false}]
-			get_parent().spawn_loot_request(position, drop_data)
-		
-		inventory[target_slot] = new_weapon_res
-		ammo_in_mag[target_slot] = incoming_ammo if incoming_ammo != -1 else new_weapon_res.clip_size
-		reserve_ammo[target_slot] = new_weapon_res.clip_size if reserve_ammo[target_slot] == 0 else reserve_ammo[target_slot]
-		
-		equip_slot(target_slot)
-		update_ammo_ui()
+	if inventory[new_slot] == null:
+		return
 	
-	spawn_gun_visuals(new_weapon_res)
+	current_slot = new_slot
+	current_weapon = inventory[current_slot]
+	is_reloading = false
+	update_ammo_ui()
+	
+	spawn_gun_visuals(current_weapon)
+	
+	var weapon_path = current_weapon.resource_path
+	sync_visual_switch.rpc(weapon_path)
+	
+	#var new_weapon_res = load(weapon_path)
+	#if not new_weapon_res: return
+	#
+	#if is_multiplayer_authority():
+		#var is_new_pistol = "Pistol" in weapon_path or "pistol" in weapon_path
+		#var target_slot = 0 if is_new_pistol else -1
+		#
+		#if target_slot == -1:
+			#if inventory[1] == null: target_slot = 1
+			#elif inventory[2] == null: target_slot = 2
+			#else: target_slot = current_slot if current_slot != 0 else 1
+		#
+		#var current_res = inventory[target_slot]
+		#if current_res != null and current_res.resource_path == new_weapon_res.resource_path:
+			#var ammo_to_add = incoming_ammo if incoming_ammo != -1 else new_weapon_res.clip_size
+			#reserve_ammo[target_slot] += ammo_to_add
+			#update_ammo_ui()
+			#return
+#
+		#if inventory[target_slot] != null:
+			#var old_res = inventory[target_slot]
+			#var old_ammo = ammo_in_mag[target_slot]
+			#var drop_data = [{"path": old_res.resource_path, "ammo": old_ammo, "is_death": false}]
+			#get_parent().spawn_loot_request(position, drop_data)
+		#
+		#inventory[target_slot] = new_weapon_res
+		#ammo_in_mag[target_slot] = incoming_ammo if incoming_ammo != -1 else new_weapon_res.clip_size
+		#reserve_ammo[target_slot] = new_weapon_res.clip_size if reserve_ammo[target_slot] == 0 else reserve_ammo[target_slot]
+		#
+		#equip_slot(target_slot)
+		#update_ammo_ui()
+	#
+	#spawn_gun_visuals(new_weapon_res)
 
 func equip_slot(index: int):
 	if index < 0 or index >= inventory.size(): return
@@ -360,13 +378,14 @@ func equip_slot(index: int):
 	spawn_gun_visuals(current_weapon)
 	sync_visual_switch.rpc(current_weapon.resource_path)
 	update_ammo_ui()
-	
-@rpc("call_local")
+
+@rpc("any_peer","call_remote","reliable")
 func sync_visual_switch(weapon_path: String):
 	var res = load(weapon_path)
-	spawn_gun_visuals(res)
+	if res:
+		spawn_gun_visuals(res)
 
-func spawn_gun_visuals(weapon_res):
+func spawn_gun_visuals(weapon_res : WeaponData):
 	if current_gun_node:
 		current_gun_node.queue_free()
 		current_gun_node = null
@@ -389,6 +408,7 @@ func change_layers_recursive(node, layer_number):
 		node.set_layer_mask_value(2, false)
 		node.set_layer_mask_value(4, false)
 		node.set_layer_mask_value(layer_number, true)
+	
 	for child in node.get_children(): 
 		change_layers_recursive(child, layer_number)
 
@@ -460,7 +480,6 @@ func pickup_item(type:String, amount:int):
 		if current_slot != -1 and current_weapon: 
 			reserve_ammo[current_slot] += amount
 			update_ammo_ui()
-
 
 @rpc("call_local") 
 func use_medkit():
