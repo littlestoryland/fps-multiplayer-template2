@@ -16,7 +16,7 @@ const EXPLOSION_SCENE = preload("res://Assets/World/explosion.tscn")
 var localpn : String = "Player"
 var enet_peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 var selectedcolor :Color = Color.WHITE
-var ws_peer : WebSocketMultiplayerPeer = WebSocketMultiplayerPeer.new()
+#var ws_peer : WebSocketMultiplayerPeer = WebSocketMultiplayerPeer.new()
 var paused: bool = false
 var options: bool = false
 var controller: bool = false
@@ -132,15 +132,15 @@ func warmup_explosions():
 	explosion.queue_free()
 
 func _on_host_button_pressedded():
-	#enet_peer.create_server(PORT)
-	#multiplayer.multiplayer_peer = enet_peer
-	#multiplayer.peer_connected.connect(add_player)
-	#multiplayer.peer_disconnected.connect(remove_player)
-	
-	ws_peer.create_server(PORT)
-	multiplayer.multiplayer_peer = ws_peer
+	enet_peer.create_server(PORT)
+	multiplayer.multiplayer_peer = enet_peer
 	multiplayer.peer_connected.connect(add_player)
 	multiplayer.peer_disconnected.connect(remove_player)
+	
+	#ws_peer.create_server(PORT)
+	#multiplayer.multiplayer_peer = ws_peer
+	#multiplayer.peer_connected.connect(add_player)
+	#multiplayer.peer_disconnected.connect(remove_player)
 
 
 func _on_host_button_pressed() -> void:
@@ -179,19 +179,19 @@ func _on_join_button_pressed() -> void:
 	
 	var address = address_entry.text
 	
-	if address.begins_with("https://"):
-		address = address.replace("https://", "wss://")
-	elif not address.begins_with("ws://") and not address.begins_with("wss://"):
-		address = "wss://" + address + ":" + str(port_to_use)
+	#if address.begins_with("https://"):
+		#address = address.replace("https://", "wss://")
+	#elif not address.begins_with("ws://") and not address.begins_with("wss://"):
+		#address = "wss://" + address + ":" + str(port_to_use)
 	
-	ws_peer.create_client(address)
+	#ws_peer.create_client(address)
 	
-	#enet_peer.create_client(address_entry.text, port_to_use)
+	enet_peer.create_client(address_entry.text, port_to_use)
 	if options_menu.visible:
 		options_menu.hide()
 	
-	multiplayer.multiplayer_peer = ws_peer
-	#multiplayer.multiplayer_peer = enet_peer
+	#multiplayer.multiplayer_peer = ws_peer
+	multiplayer.multiplayer_peer = enet_peer
 	
 
 func _on_options_button_toggled(toggled_on: bool) -> void:

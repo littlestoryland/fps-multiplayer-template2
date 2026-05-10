@@ -86,15 +86,13 @@ func interact(player_node):
 		var entry = contained_weapons[0]
 		
 		var path_to_give = ""
-		var ammo_to_give = -1 
 		
 		if typeof(entry) == TYPE_DICTIONARY:
 			path_to_give = entry["path"]
-			ammo_to_give = entry["ammo"]
 		else:
 			path_to_give = str(entry)
-			ammo_to_give = -1
 		
-		player_node.sync_weapon_change.rpc(path_to_give, ammo_to_give)
-		contained_weapons.remove_at(0)
-		update_visuals()
+		player_node.equip_weapon.rpc(path_to_give)
+		queue_free()
+		#contained_weapons.remove_at(0)
+		#update_visuals()

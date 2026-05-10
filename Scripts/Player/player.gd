@@ -369,15 +369,42 @@ func equip_slot(index: int):
 	current_slot = index
 	
 	if inventory[index] == null:
-		current_weapon = null
-		if current_gun_node: current_gun_node.queue_free()
-		update_ammo_ui()
+		#current_weapon = null
+		#if current_gun_node: current_gun_node.queue_free()
+		#update_ammo_ui()
 		return
+	
+	sync_weapon_change.rpc(index)
 	
 	current_weapon = inventory[index]
 	spawn_gun_visuals(current_weapon)
 	sync_visual_switch.rpc(current_weapon.resource_path)
 	update_ammo_ui()
+
+@rpc("any_peer","call_local","reliable")
+func equip_weapon(weapon_path:String):
+	var new_weapon = load(weapon_path)
+	if not new_weapon:
+		return
+	
+	var target_slot = current_slot
+	
+	if inventory[0] == null:
+		target_slot = 0
+	elif inventory[1] == null:
+		target_slot = 1
+	
+	if inventory[target_slot] != null and inventory[target_slot] != new_weapon:
+		var drop_data = [{"path" : inventory[target_slot].resource_path, "ammo":ammo_in_mag[target_slot], "is_death": false}]
+		get_parent().spawn_loot_request.rpc(position, drop_data)
+	
+	inventory[target_slot] = new_weapon
+	
+	if "clip_size" in new_weapon:
+		ammo_in_mag[target_slot] = new_weapon.clip_size
+	
+	current_slot = -1
+	equip_slot(target_slot)
 
 @rpc("any_peer","call_remote","reliable")
 func sync_visual_switch(weapon_path: String):
