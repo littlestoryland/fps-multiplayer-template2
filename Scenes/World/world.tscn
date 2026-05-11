@@ -1,7 +1,6 @@
 [gd_scene load_steps=83 format=4 uid="uid://b57uspbprxc8"]
 
 [ext_resource type="Script" uid="uid://do5tpp15n2kjr" path="res://Scripts/World/world.gd" id="1_dr8i3"]
-[ext_resource type="Environment" uid="uid://chjdro5itu2re" path="res://Assets/World/world2.tres" id="3_hiquf"]
 [ext_resource type="Script" uid="uid://b6c3k2hf1yp1y" path="res://Scripts/UI/fps_counter.gd" id="4_7c7np"]
 [ext_resource type="PackedScene" uid="uid://fdvaafxg1cpl" path="res://Assets/World/explosion.tscn" id="4_7ubof"]
 [ext_resource type="Texture2D" uid="uid://bdvkk3k16jm2m" path="res://Assets/Textures/texture_07.png" id="5_xatfh"]
@@ -21,8 +20,6 @@
 [ext_resource type="PackedScene" uid="uid://d3mull33vu05e" path="res://Scenes/World/Medkit.tscn" id="20_7ubof"]
 [ext_resource type="ArrayOccluder3D" uid="uid://lyfye43ospp4" path="res://Resources/Occluders/world.occ" id="21_6paci"]
 [ext_resource type="PackedScene" uid="uid://cktm5mxxq787" path="res://Scenes/World/grenade_pickup.tscn" id="21_7ubof"]
-
-[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_wntx8"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u2ro6"]
 resource_name = "Ground"
@@ -513,68 +510,7 @@ data = PackedVector3Array(-1.465, 1.25, -0.8775, -1.465, -1.25, -0.8775, 1.465, 
 [sub_resource type="BoxMesh" id="BoxMesh_7ubof"]
 size = Vector3(5, 0.3, 5)
 
-[sub_resource type="Animation" id="Animation_ug7wi"]
-resource_name = "Dolly"
-length = 120.0
-loop_mode = 1
-step = 0.1
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("../DollyCamera:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 31.7668, 45.9, 92.3),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(0, 1, 0), Vector3(1.16575e-06, 1, -13.3346), Vector3(0, 7.83217, -13.335), Vector3(0, 11.024, 8.298)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("../DollyCamera:rotation")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 32.2, 69.9, 101.9),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(0, -1.5708, 0), Vector3(-0.00523599, 1.5708, 0), Vector3(-0.584685, 3.14159, 0), Vector3(-0.584685, 0, 0)]
-}
-
-[sub_resource type="Animation" id="Animation_ei2s0"]
-length = 0.001
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("../DollyCamera:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector3(0, 0, 0)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("../DollyCamera:rotation")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector3(-0.584685, 3.14159, 0)]
-}
-
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_lekn2"]
-_data = {
-&"Dolly": SubResource("Animation_ug7wi"),
-&"RESET": SubResource("Animation_ei2s0")
-}
 
 [sub_resource type="Theme" id="Theme_utqnk"]
 
@@ -582,27 +518,25 @@ _data = {
 default_font = ExtResource("16_52u43")
 default_font_size = 20
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xatfh"]
+albedo_color = Color(0.101961, 0.109804, 0.137255, 1)
+metallic = 0.2
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7ubof"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_6paci"]
+material = SubResource("StandardMaterial3D_7ubof")
+radius = 1.5
+height = 0.4
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_owiee"]
+
 [node name="World" type="Node"]
 script = ExtResource("1_dr8i3")
 grenade_scene = ExtResource("4_7ubof")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = ExtResource("3_hiquf")
-camera_attributes = SubResource("CameraAttributesPractical_wntx8")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.873601, -0.335613, 0.352398, -0.478107, -0.456889, 0.750111, -0.0907403, -0.823782, -0.559598, 0, 40, 0)
-layers = 31
-light_temperature = 4300.0
-light_energy = 5.0
-shadow_enabled = true
-shadow_bias = 0.0
-directional_shadow_mode = 0
-directional_shadow_split_1 = 0.04
-directional_shadow_split_2 = 0.11
-directional_shadow_split_3 = 0.33
-directional_shadow_blend_splits = true
-directional_shadow_max_distance = 40.0
 
 [node name="FpsCounter" type="Label" parent="."]
 offset_right = 40.0
@@ -1625,7 +1559,6 @@ root_node = NodePath("../Blur")
 libraries = {
 &"": SubResource("AnimationLibrary_lekn2")
 }
-autoplay = "Dolly"
 
 [node name="Blur" type="ColorRect" parent="Menu"]
 anchors_preset = 15
@@ -1635,9 +1568,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0.665)
-
-[node name="DollyCamera" type="Camera3D" parent="Menu"]
-transform = Transform3D(-1, -1.39926e-06, 2.11405e-06, 0, 0.833886, 0.551937, -2.53518e-06, 0.551937, -0.833886, 0, 0, 0)
 
 [node name="Options" type="PanelContainer" parent="Menu"]
 unique_name_in_owner = true
@@ -1931,6 +1861,45 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.67806, 0, 0)
 [node name="OccluderInstance3D" type="OccluderInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.46008, 2.87796, 0)
 occluder = ExtResource("21_6paci")
+
+[node name="MenuRoom" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -500, 0)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="MenuRoom"]
+layers = 2
+flip_faces = true
+size = Vector3(50, 50, 50)
+material = SubResource("StandardMaterial3D_xatfh")
+
+[node name="DollyCamera" type="Camera3D" parent="MenuRoom"]
+transform = Transform3D(-1, -1.39926e-06, 2.11405e-06, 0, 0.833886, 0.551937, -2.53518e-06, 0.551937, -0.833886, 0, 0, 0)
+cull_mask = 1047554
+current = true
+
+[node name="SpotLight3D" type="SpotLight3D" parent="MenuRoom"]
+transform = Transform3D(1, 0, 0, 0, -0.906308, -0.422618, 0, 0.422618, -0.906308, -0.5, -20.336, 5.341)
+layers = 2
+light_intensity_lumens = 5109.59
+light_energy = 4.288
+light_cull_mask = 4294966274
+spot_range = 7.887
+
+[node name="OmniLight3D" type="OmniLight3D" parent="MenuRoom"]
+layers = 2
+light_color = Color(0.306298, 0.148128, 2.40654e-08, 1)
+light_energy = 50.0
+light_cull_mask = 4294967294
+omni_range = 50.0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MenuRoom"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -24.9031, 12.5)
+layers = 2
+mesh = SubResource("SphereMesh_6paci")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="MenuRoom"]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, -22.681, 13)
+layers = 2
+mesh = SubResource("CapsuleMesh_owiee")
 
 [connection signal="toggled" from="Menu/Options/MarginContainer/VBoxContainer/FpsCounter" to="FpsCounter" method="_on_fps_counter_toggled"]
 [connection signal="toggled" from="Menu/Options/MarginContainer/VBoxContainer/FpsCounter2" to="." method="_on_fps_counter_2_toggled"]
