@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=4 format=3]
+
+[ext_resource type="PackedScene" uid="uid://8vplk50jlnro" path="res://Scenes/Weapons/Assault Rifle.tscn" id="1_3rxda"]
+[ext_resource type="Script" uid="uid://d2i5ir1btagmo" path="res://Scripts/Weapons/Weapon_data.gd" id="2_2m7mn"]
+[ext_resource type="AudioStream" uid="uid://bevvvtb8n4qfc" path="res://Assets/Audio/645317__darkshroom__m9_noisegate-1780.ogg" id="3_sw0in"]
+
+[resource]
+script = ExtResource("2_2m7mn")
+name = "AK 47"
+damage = 22
+fire_rate = 0.13
+is_automatic = true
+clip_size = 30
+reload_time = 2.3
+Weapon_Scene = ExtResource("1_3rxda")
+shoot_sound = ExtResource("3_sw0in")
+aim_position = Vector3(-0.5, 0.12, 0)
+aim_fov = 50.0
+metadata/_custom_type_script = "uid://d2i5ir1btagmo"

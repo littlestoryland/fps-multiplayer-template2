@@ -1,0 +1,4 @@
+[gd_resource type="Environment" format=3 uid="uid://rit32mg7t2bl"]
+
+[resource]
+glow_bloom = 0.21

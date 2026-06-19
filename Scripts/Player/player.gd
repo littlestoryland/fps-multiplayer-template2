@@ -10,16 +10,26 @@ extends CharacterBody3D
 @onready var interact_label: Label = $CanvasLayer/Label
 @onready var interact_ray: RayCast3D = $Camera3D/InteractRay
 @onready var ammo_label: Label = $CanvasLayer/Label2
-@onready var health_bar: ProgressBar = $CanvasLayer/HealthBar
+@onready var health_bar: ProgressBar = $CanvasLayer/Panel/HealthBar
 @onready var weapon_camera: Camera3D = $Camera3D/SubViewport/SubViewport/WeaponCamera
 @onready var mesh_node: MeshInstance3D = $MeshInstance3D
 @onready var collision_node: CollisionShape3D = $CollisionShape3D
 @onready var head_check_ray: RayCast3D = $HeadCheckRay
+@onready var loadout_ui: CanvasLayer = $CanvasLayer/LoadoutUI
+@onready var ingame_menu: PanelContainer = $CanvasLayer/IngameMenu
+@onready var sens_slider: HSlider = $CanvasLayer/IngameMenu/VBoxContainer/HBoxContainer/SensSlider
+# --- NEW WEAPON UI VARS ---
+@onready var slot0_btn: Button = $CanvasLayer/Panel3/WeaponDock/Slot0_Btn
+@onready var slot1_btn: Button = $CanvasLayer/Panel3/WeaponDock/Slot1_Btn
+@onready var slot0_icon: TextureRect = $CanvasLayer/Panel3/WeaponDock/Slot0_Btn/GunIcon
+@onready var slot1_icon: TextureRect = $CanvasLayer/Panel3/WeaponDock/Slot1_Btn/GunIcon
+@onready var slot0_ammo: Label = $CanvasLayer/Panel3/WeaponDock/Slot0_Btn/AmmoLabel
+@onready var slot1_ammo: Label = $CanvasLayer/Panel3/WeaponDock/Slot1_Btn/AmmoLabel
+@onready var weapon_dock = $CanvasLayer/Panel3
 
 # -------------------------------------------------------------------------
 # 2. SETTINGS & PRELOADS
 # -------------------------------------------------------------------------
-
 @export_group("Gameplay Settings")
 @export var health : int = 200
 @export var infinite_reserves:bool = true
@@ -73,7 +83,9 @@ var is_reloading : bool = false
 var is_healing : bool = false
 var ammo_in_mag : Array[int] = [0,0]
 var reserve_ammo : Array = [0,0]
-
+var in_loadout_menu : bool = false
+var active_style = preload("res://Resources/Styles/active_slot.tres") # Put your exact path here
+var inactive_style = preload("res://Resources/Styles/inactive_slot.tres")
 
 # -------------------------------------------------------------------------
 # 4. SETUP
@@ -82,6 +94,33 @@ func _enter_tree() -> void:
 	set_multiplayer_authority(str(name).to_int())
 
 func _ready() -> void:
+	
+	if OS.has_feature("mobile"):
+		# Mobile: Move to the bottom-center safe zone
+		# PRESET_BOTTOM_CENTER centers it horizontally at the very bottom
+		weapon_dock.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_KEEP_SIZE)
+		
+		## OPTIONAL SHIFT: Lift it up slightly if it overlaps a screen notch or bezel
+		#weapon_dock.position.y -= 20 
+	else:
+		# PC/Laptop: Keep it clean in the bottom-right corner
+		weapon_dock.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE)
+		
+		## Push it slightly away from the absolute edge of the screen for breathing room
+		#weapon_dock.position.x -= 0
+		#weapon_dock.position.y -= 0
+	
+	if slot0_btn:
+		slot0_btn.pressed.connect(func(): equip_slot(0))
+	if slot1_btn:
+		slot1_btn.pressed.connect(func(): equip_slot(1))
+	
+	if OS.has_feature("mobile"):
+		$CanvasLayer/Button.show()
+	else:
+		$CanvasLayer/Button.hide()
+	
+	$CanvasLayer.show()
 	$Camera3D/SubViewport/SubViewport/WeaponCamera/Node3D.position = Vector3(0,0,0)
 	default_cam_height = camera.position.y
 	cam_rot_x = camera.rotation.x
@@ -110,21 +149,30 @@ func _ready() -> void:
 	var default_gun = load("res://Resources/Weapons/Pistol.tres")
 	
 	if is_multiplayer_authority():
-		inventory[0] = default_gun
-		ammo_in_mag[0] = default_gun.clip_size
-		reserve_ammo[0] = default_gun.clip_size
-		current_weapon = default_gun
-		current_slot = 0
+		if ingame_menu: ingame_menu.hide()
+		if sens_slider:
+			sens_slider.value = sensitivity
+			sens_slider.value_changed.connect(_on_sensitivity_changed)
+			
+		var resume_btn = get_node_or_null("CanvasLayer/IngameMenu/VBoxContainer/ButtonRow/ResumeBtn")
+		if resume_btn: resume_btn.pressed.connect(toggle_ingame_menu)
+		
+		var leave_btn = get_node_or_null("CanvasLayer/IngameMenu/VBoxContainer/ButtonRow/LeaveBtn")
+		if leave_btn: leave_btn.pressed.connect(_on_leave_match_pressed)
 		
 		player_color = get_parent().selectedcolor
 		playername = get_parent().localpn
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		camera.current = true
 		if spawns.size() > 0: position = spawns[randi() % spawns.size()]
 		
-		spawn_gun_visuals(default_gun)
+		# Open up the loadout selection menu
+		in_loadout_menu = true
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		if loadout_ui: 
+			loadout_ui.show()
 	else:
-		if default_gun: spawn_gun_visuals(default_gun)
+		if loadout_ui: 
+			loadout_ui.hide()
 
 	health = 200
 	update_health_ui()
@@ -138,7 +186,7 @@ func _ready() -> void:
 # 5. INPUT & PROCESS
 # -------------------------------------------------------------------------
 func _input(event: InputEvent) -> void:
-	if not is_multiplayer_authority(): return
+	if not is_multiplayer_authority() or in_loadout_menu: return
 	
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		rotate_y(-event.relative.x * sensitivity)
@@ -185,7 +233,16 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("med"): 
 		use_medkit.rpc()
 	
-	if Input.is_action_pressed("shoot") and not is_reloading and not is_healing and not is_dead:
+	var trigger_pulled: bool = false
+	if current_weapon != null and "is_automatic" in current_weapon:
+		if current_weapon.is_automatic or not is_pc:
+			trigger_pulled = Input.is_action_pressed("shoot") 
+		else:
+			trigger_pulled = Input.is_action_just_pressed("shoot") 
+	else:
+		trigger_pulled = Input.is_action_pressed("shoot") 
+
+	if trigger_pulled and not is_reloading and not is_healing and not is_dead:
 		if current_weapon != null:
 			var current_time = Time.get_ticks_msec() / 1000.0
 			if current_time - last_fire_time >= current_weapon.fire_rate:
@@ -196,7 +253,11 @@ func _process(delta: float) -> void:
 					reload()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_multiplayer_authority() or is_dead: return
+	if is_multiplayer_authority() and Input.is_action_just_pressed("ui_cancel"):
+		toggle_ingame_menu()
+		return
+	
+	if not is_multiplayer_authority() or is_dead or in_loadout_menu: return
 	
 	if Input.is_action_just_pressed("w1"): equip_slot(0)
 	if Input.is_action_just_pressed("w2"): equip_slot(1)
@@ -209,7 +270,7 @@ func _unhandled_input(event: InputEvent) -> void:
 # 6. PHYSICS
 # -------------------------------------------------------------------------
 func _physics_process(delta: float) -> void:
-	if not is_multiplayer_authority():
+	if not is_multiplayer_authority() or in_loadout_menu:
 		return
 	
 	if is_dead: 
@@ -250,13 +311,29 @@ func shoot() -> void:
 		anim_player.play("shoot")
 	
 	play_shoot_effects.rpc()
-	
 
 	if raycast.is_colliding():
 		var collider = raycast.get_collider()
 		if collider and collider.has_method("receive_damage"):
-			collider.receive_damage.rpc_id(collider.get_multiplayer_authority(), current_weapon.damage, playername)
+			var hit_point = raycast.get_collision_point()
+			var distance = raycast.global_position.distance_to(hit_point)
+			var final_damage = current_weapon.damage
+			var w_path = current_weapon.resource_path.to_lower()
 			
+			if "light" in w_path:
+				if distance > 15.0:
+					final_damage = max(5, current_weapon.damage - int((distance - 15.0) * 0.4))
+			elif "assault" in w_path:
+				if distance > 25.0:
+					final_damage = max(12, current_weapon.damage - int((distance - 25.0) * 0.2))
+			elif "pistol" in w_path:
+				if distance > 10.0:
+					final_damage = max(6, current_weapon.damage - int((distance - 10.0) * 0.6))
+			elif "heavy" in w_path:
+				if distance > 45.0:
+					final_damage = max(45, current_weapon.damage - int((distance - 45.0) * 0.1))
+
+			collider.receive_damage.rpc_id(collider.get_multiplayer_authority(), final_damage, playername)
 
 @rpc("call_remote","unreliable")
 func play_shoot_effects():
@@ -295,7 +372,7 @@ func receive_damage(damage: int, attn: String) -> void:
 			reserve_ammo = [pistol.clip_size, 0, 0]
 			current_weapon = pistol
 			current_slot = 0
-			sync_weapon_change.rpc("res://Resources/Weapons/Pistol.tres", -1)
+			sync_weapon_change.rpc(0)
 			equip_slot(0) 
 
 		self.hide()
@@ -313,85 +390,25 @@ func receive_damage(damage: int, attn: String) -> void:
 # -------------------------------------------------------------------------
 # 8. WEAPON SYNC & INVENTORY
 # -------------------------------------------------------------------------
-
 @rpc("call_local","reliable")
 func sync_weapon_change(new_slot : int):
-	#if current_slot == new_slot or is_reloading or is_healing or is_dead:
-		#return
-	#
-	#if inventory[new_slot] == null:
-		#return
-	
 	current_slot = new_slot
 	current_weapon = inventory[current_slot]
 	is_reloading = false
 	update_ammo_ui()
-	
 	spawn_gun_visuals(current_weapon)
-	
-	#var weapon_path = current_weapon.resource_path
-	#sync_visual_switch.rpc(weapon_path)
-	
-	#var new_weapon_res = load(weapon_path)
-	#if not new_weapon_res: return
-	#
-	#if is_multiplayer_authority():
-		#var is_new_pistol = "Pistol" in weapon_path or "pistol" in weapon_path
-		#var target_slot = 0 if is_new_pistol else -1
-		#
-		#if target_slot == -1:
-			#if inventory[1] == null: target_slot = 1
-			#elif inventory[2] == null: target_slot = 2
-			#else: target_slot = current_slot if current_slot != 0 else 1
-		#
-		#var current_res = inventory[target_slot]
-		#if current_res != null and current_res.resource_path == new_weapon_res.resource_path:
-			#var ammo_to_add = incoming_ammo if incoming_ammo != -1 else new_weapon_res.clip_size
-			#reserve_ammo[target_slot] += ammo_to_add
-			#update_ammo_ui()
-			#return
-#
-		#if inventory[target_slot] != null:
-			#var old_res = inventory[target_slot]
-			#var old_ammo = ammo_in_mag[target_slot]
-			#var drop_data = [{"path": old_res.resource_path, "ammo": old_ammo, "is_death": false}]
-			#get_parent().spawn_loot_request(position, drop_data)
-		#
-		#inventory[target_slot] = new_weapon_res
-		#ammo_in_mag[target_slot] = incoming_ammo if incoming_ammo != -1 else new_weapon_res.clip_size
-		#reserve_ammo[target_slot] = new_weapon_res.clip_size if reserve_ammo[target_slot] == 0 else reserve_ammo[target_slot]
-		#
-		#equip_slot(target_slot)
-		#update_ammo_ui()
-	#
-	#spawn_gun_visuals(new_weapon_res)
 
 func equip_slot(index: int):
 	if index < 0 or index >= inventory.size() or current_slot == index : return
-	
 	current_slot = index
-	
-	if inventory[index] == null:
-		#current_weapon = null
-		#if current_gun_node: current_gun_node.queue_free()
-		#update_ammo_ui()
-		return
-	
+	if inventory[index] == null: return
 	sync_weapon_change.rpc(index)
-	
-	#current_weapon = inventory[index]
-	#spawn_gun_visuals(current_weapon)
-	#sync_visual_switch.rpc(current_weapon.resource_path)
-	#update_ammo_ui()
 
-#@rpc("any_peer","call_local","reliable")
 func equip_weapon(weapon_path:String):
 	var new_weapon = load(weapon_path)
-	if not new_weapon:
-		return
+	if not new_weapon: return
 	
 	var target_slot = current_slot
-	
 	if inventory[0] == null:
 		target_slot = 0
 	elif inventory[1] == null:
@@ -402,18 +419,11 @@ func equip_weapon(weapon_path:String):
 		get_parent().spawn_loot_request.rpc(position, drop_data)
 	
 	inventory[target_slot] = new_weapon
-	
 	if "clip_size" in new_weapon:
 		ammo_in_mag[target_slot] = new_weapon.clip_size
 	
 	current_slot = -1
 	equip_slot(target_slot)
-
-#@rpc("any_peer","call_remote","reliable")
-#func sync_visual_switch(weapon_path: String):
-	#var res = load(weapon_path)
-	#if res:
-		#spawn_gun_visuals(res)
 
 func spawn_gun_visuals(weapon_res : WeaponData):
 	if current_gun_node:
@@ -475,15 +485,13 @@ func pickup_weapon(weapon_path:String):
 @rpc("any_peer","call_local","reliable")
 func sync_pickup(weapon_path: String, target_slot:int):
 	var new_weapon = load(weapon_path)
-	if not new_weapon:
-		return
+	if not new_weapon: return
 	
 	if is_multiplayer_authority() and inventory[target_slot] != null and inventory[target_slot] != new_weapon:
 		var drop_data = [{"path" : inventory[target_slot].resource_path, "ammo":ammo_in_mag[target_slot], "is_death": false}]
 		get_parent().spawn_loot_request.rpc(position, drop_data)
 	
 	inventory[target_slot] = new_weapon
-	
 	if "clip_size" in new_weapon:
 		ammo_in_mag[target_slot] = new_weapon.clip_size
 	
@@ -497,11 +505,38 @@ func update_rotation_x(angle: float):
 func update_health_ui(): 
 	if health_bar: health_bar.value = health
 
-func update_ammo_ui(): 
-	if current_weapon and current_weapon is WeaponData: 
-		ammo_label.text = str(ammo_in_mag[current_slot]) + ("/ Inf" if infinite_reserves else " / " + str(reserve_ammo[current_slot]))
-	else: 
-		ammo_label.text = ""
+func update_ammo_ui() -> void:
+	# 1. UPDATE SLOT 0 (PRIMARY)
+	if inventory[0] != null:
+		slot0_btn.show()
+		if "weapon_icon" in inventory[0] and inventory[0].weapon_icon != null:
+			slot0_icon.texture = inventory[0].weapon_icon
+		var inf_text = "Inf" if infinite_reserves else str(reserve_ammo[0])
+		slot0_ammo.text = str(ammo_in_mag[0]) + " / " + inf_text
+	else:
+		slot0_btn.hide() # Hide the slot if there is no gun
+
+	# 2. UPDATE SLOT 1 (SECONDARY)
+	if inventory.size() > 1 and inventory[1] != null:
+		slot1_btn.show()
+		if "weapon_icon" in inventory[1] and inventory[1].weapon_icon != null:
+			slot1_icon.texture = inventory[1].weapon_icon
+		var inf_text = "Inf" if infinite_reserves else str(reserve_ammo[1])
+		slot1_ammo.text = str(ammo_in_mag[1]) + " / " + inf_text
+	else:
+		slot1_btn.hide()
+
+	# 3. APPLY THE "SHINE" EFFECT TO THE ACTIVE GUN
+	if current_slot == 0:
+		slot0_btn.add_theme_stylebox_override("normal", active_style)
+		slot0_btn.add_theme_stylebox_override("hover", active_style)
+		slot1_btn.add_theme_stylebox_override("normal", inactive_style)
+		slot1_btn.add_theme_stylebox_override("hover", inactive_style)
+	elif current_slot == 1:
+		slot1_btn.add_theme_stylebox_override("normal", active_style)
+		slot1_btn.add_theme_stylebox_override("hover", active_style)
+		slot0_btn.add_theme_stylebox_override("normal", inactive_style)
+		slot0_btn.add_theme_stylebox_override("hover", inactive_style)
 
 func update_visuals():
 	if not is_node_ready(): await ready
@@ -560,10 +595,8 @@ func request_state_sync():
 
 @rpc("authority","call_remote","reliable")
 func receive_state_sync(path0: String, path1:String, active_slot:int , current_hp: int):
-	if path0 != "":
-		inventory[0] = load(path0)
-	if path1 != "":
-		inventory[1] = load(path1)
+	if path0 != "": inventory[0] = load(path0)
+	if path1 != "": inventory[1] = load(path1)
 	
 	health = current_hp
 	update_health_ui()
@@ -572,3 +605,74 @@ func receive_state_sync(path0: String, path1:String, active_slot:int , current_h
 		current_slot = active_slot
 		current_weapon = inventory[current_slot]
 		spawn_gun_visuals(current_weapon)
+
+# -------------------------------------------------------------------------
+# 10. LOADOUT MENU SYSTEM
+# -------------------------------------------------------------------------
+func confirm_loadout_choice(primary_path: String, secondary_path: String) -> void:
+	in_loadout_menu = false
+	if loadout_ui: 
+		loadout_ui.hide()
+		
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if is_multiplayer_authority():
+		set_networked_loadout.rpc(primary_path, secondary_path)
+
+@rpc("any_peer", "call_local", "reliable")
+func set_networked_loadout(p_path: String, s_path: String) -> void:
+	var p_res = load(p_path)
+	var s_res = load(s_path)
+	
+	inventory[0] = p_res
+	inventory[1] = s_res
+	
+	if p_res:
+		ammo_in_mag[0] = p_res.clip_size
+		reserve_ammo[0] = p_res.clip_size * 3 
+	if s_res:
+		ammo_in_mag[1] = s_res.clip_size
+		reserve_ammo[1] = s_res.clip_size * 3 
+	
+	if is_multiplayer_authority():
+		current_slot = -1
+		equip_slot(0)
+
+# -------------------------------------------------------------------------
+# 11. IN-GAME MENU ENGINE
+# -------------------------------------------------------------------------
+func toggle_ingame_menu() -> void:
+	if not is_multiplayer_authority(): return
+	
+	if ingame_menu.visible:
+		ingame_menu.hide()
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		in_loadout_menu = false 
+	else:
+		ingame_menu.show()
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		in_loadout_menu = true 
+
+func _on_sensitivity_changed(value: float) -> void:
+	sensitivity = value
+	controller_sensitivity = value * 2.5
+
+func _on_leave_match_pressed() -> void:
+	if ingame_menu:
+		$CanvasLayer.hide()
+		ingame_menu.hide()
+	
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	
+	# The foolproof direct connection to your world
+	var world_node = get_parent()
+	
+	if world_node and world_node.has_method("leave_match_to_menu"):
+		world_node.leave_match_to_menu()
+	else:
+		if multiplayer.multiplayer_peer:
+			multiplayer.multiplayer_peer = null
+		get_tree().change_scene_to_file("res://Scenes/World/world.tscn")
+
+
+func _on_esc_pressed() -> void:
+	toggle_ingame_menu()

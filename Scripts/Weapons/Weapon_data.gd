@@ -11,6 +11,7 @@ class_name WeaponData
 @export var reload_time : float = 1.5
 
 @export_group("Visuals")
+@export var weapon_icon: Texture2D
 @export var Weapon_Scene : PackedScene
 @export var shoot_sound : AudioStream
 

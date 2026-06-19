@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=4 format=3 uid="uid://c3a8jg677v2x2"]
+
+[ext_resource type="PackedScene" uid="uid://dl6ebpiagbyw4" path="res://Scenes/Weapons/Heavy Rifle.tscn" id="1_xo1pm"]
+[ext_resource type="Script" uid="uid://d2i5ir1btagmo" path="res://Scripts/Weapons/Weapon_data.gd" id="2_u4opg"]
+[ext_resource type="AudioStream" uid="uid://bevvvtb8n4qfc" path="res://Assets/Audio/645317__darkshroom__m9_noisegate-1780.ogg" id="3_mwwqh"]
+
+[resource]
+script = ExtResource("2_u4opg")
+name = "Heavy Rifle"
+damage = 65
+fire_rate = 0.4
+is_automatic = false
+clip_size = 10
+reload_time = 3.2
+Weapon_Scene = ExtResource("1_xo1pm")
+shoot_sound = ExtResource("3_mwwqh")
+aim_position = Vector3(-0.5, 0.12, 0)
+aim_fov = 50.0
+metadata/_custom_type_script = "uid://d2i5ir1btagmo"
